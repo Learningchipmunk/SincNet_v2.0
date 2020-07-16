@@ -1,0 +1,17 @@
+epoch 4, running_loss_tr=0.043527 running_acc_tr=0.594585 best_class_acc_te=0.451187 loss_te=1.687245 window_acc_te=0.385567 
+epoch 9, running_loss_tr=0.040324 running_acc_tr=0.615213 best_class_acc_te=0.490237 loss_te=1.585473 window_acc_te=0.419148 
+epoch 14, running_loss_tr=0.044712 running_acc_tr=0.594895 best_class_acc_te=0.508707 loss_te=1.491948 window_acc_te=0.444888 
+epoch 19, running_loss_tr=0.032956 running_acc_tr=0.699066 best_class_acc_te=0.530871 loss_te=1.449769 window_acc_te=0.465089 
+epoch 24, running_loss_tr=0.032427 running_acc_tr=0.681861 best_class_acc_te=0.537203 loss_te=1.424708 window_acc_te=0.471425 
+epoch 29, running_loss_tr=0.028857 running_acc_tr=0.721629 best_class_acc_te=0.564116 loss_te=1.317281 window_acc_te=0.500982 
+epoch 34, running_loss_tr=0.034252 running_acc_tr=0.720386 best_class_acc_te=0.580475 loss_te=1.305430 window_acc_te=0.509966 
+epoch 39, running_loss_tr=0.032438 running_acc_tr=0.685483 best_class_acc_te=0.572559 loss_te=1.330591 window_acc_te=0.502838 
+epoch 44, running_loss_tr=0.029885 running_acc_tr=0.745916 best_class_acc_te=0.588918 loss_te=1.292095 window_acc_te=0.516660 
+epoch 49, running_loss_tr=0.028795 running_acc_tr=0.736750 best_class_acc_te=0.588918 loss_te=1.266121 window_acc_te=0.524859 
+epoch 54, running_loss_tr=0.024785 running_acc_tr=0.764043 best_class_acc_te=0.591557 loss_te=1.255616 window_acc_te=0.522098 
+epoch 4, running_loss_tr=0.026374 running_acc_tr=0.738625 best_class_acc_te=0.605277 loss_te=1.242624 window_acc_te=0.530153 
+epoch 9, running_loss_tr=0.024573 running_acc_tr=0.748354 best_class_acc_te=0.611609 loss_te=1.234719 window_acc_te=0.539946 
+epoch 14, running_loss_tr=0.026085 running_acc_tr=0.732537 best_class_acc_te=0.612137 loss_te=1.208856 window_acc_te=0.542246 
+epoch 19, running_loss_tr=0.029320 running_acc_tr=0.714704 best_class_acc_te=0.616887 loss_te=1.214928 window_acc_te=0.543340 
+epoch 24, running_loss_tr=0.027260 running_acc_tr=0.728585 best_class_acc_te=0.611082 loss_te=1.232878 window_acc_te=0.542607 
+epoch 29, running_loss_tr=0.017494 running_acc_tr=0.827833 best_class_acc_te=0.605277 loss_te=1.291095 window_acc_te=0.534690 
