@@ -163,6 +163,7 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
           test_acc_period = 5,
           ## For mixup:
           beta_coef = 0.5,
+          mixup_batch_prop = 0.5,
           use_mixup = False,
           same_classes = False,
           ## If a Net was loaded:
@@ -249,8 +250,19 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
                 inputs, labels = data
                 
                 # Mixing up data if required by user:
-                if(use_mixup):
+                if(use_mixup and mixup_batch_prop==1.0):
                     inputs, labels, mixup_percentage = mixup(inputs, labels, beta_coef, n_classes, same_classes)
+                    running_mixup_percentage         = 0.33*mixup_percentage + 0.66*running_mixup_percentage
+                elif(use_mixup):
+                    ## Prop /times batch_size troncated gives us the mixed up data batch size:
+                    mixup_batch_size = int(inputs.size(0) * mixup_batch_prop)
+
+                    ## Mixes up data on chosen batch:
+                    inputs[:mixup_batch_size,:], labels[:mixup_batch_size], mixup_percentage = mixup(inputs[:mixup_batch_size,:], 
+                                                                labels[:mixup_batch_size], beta_coef, n_classes, same_classes)
+
+                    # Total mixup percentage is the proportion of mixed up data times the mixup percentage of the mixed up data:
+                    mixup_percentage                *= mixup_batch_prop
                     running_mixup_percentage         = 0.33*mixup_percentage + 0.66*running_mixup_percentage
                     
 

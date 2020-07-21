@@ -48,7 +48,15 @@ def act_fun(act_type):
         
     if act_type=="linear":
         return nn.LeakyReLU(1) # initializzed like this, but not used in forward!
-            
+    
+    ## Added SeLu and PReLu   
+    if act_type=="selu": 
+        return nn.SELU()
+
+    if act_type=="prelu":
+        return nn.PReLU(init=0.2) #Initial value of alpha is 0.2 like in LeakyReLu above
+
+
             
 ## Layer that normalizes input in SincNet and MLP
 class LayerNorm(nn.Module):

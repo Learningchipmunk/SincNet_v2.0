@@ -90,6 +90,7 @@ N_eval_epoch=int(options.N_eval_epoch)
 train_acc_period=int(options.train_acc_period)
 use_mixup=str_to_bool(options.use_mixup)
 beta_coef=float(options.beta_coef)
+mixup_batch_prop=float(options.mixup_batch_prop)
 ## same_classes has default value False:
 same_classes=False
 if(options.same_classes!=None):
@@ -242,7 +243,11 @@ print("Done!")
 
 # python main.py --configPath=cfg/SincNet_DCASE_EnergyPre1000_Window800_withMixup_Drop30.cfg --cuda=0
 # python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800.cfg --cuda=1 
-# python main.py --configPath=cfg/test.cfg --cuda=1 
+# nohup python main.py --configPath=cfg/test.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/test.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=1 & 
+# python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu.cfg --cuda=0
+# python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu.cfg --cuda=1
 ## Parameters that needs to change each execution:
 Training_model_file   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 Models_file_extension = ".pkl" if pt_file == 'none' else pt_file.split(".")[1]
@@ -302,6 +307,7 @@ train(CNN_net, DNN1_net, DNN2_net, optimizers, train_loader, valid_loader, cost,
           test_acc_period = N_eval_epoch,
           ## For Mixup
           beta_coef = beta_coef,
+          mixup_batch_prop = mixup_batch_prop,
           use_mixup = use_mixup,
           same_classes = same_classes,
           ## Loaded model params:

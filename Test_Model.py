@@ -9,6 +9,13 @@ python Test_Model.py --configPath=cfg/SincNet_DCASE_Preprocessing_WithEnergy_Win
 python Test_Model.py --configPath=../SincNet_DCASE/cfg/SincNet_DCASE_Preprocessing_biggerWindow_800.cfg --FileName=model_raw_32kHz_Preprocessed_BiggerWindow_800 --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_EnergyPre1000_Window800_withSameClassMixup.cfg --FileName=NTF_Energy_Window1000_p7_withSameClassMixup_beta0.1 --cuda=1 
 python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800.cfg --cuda=1 
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_Drop30.cfg --cuda=1 
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_Drop30.cfg  --FileName=NTF_EnergyPrepRepeat_Window_800--cuda=1 
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu.cfg --cuda=1
 """
 import numpy as np
 import torch

@@ -127,6 +127,12 @@ def read_conf():
         else:
             print("You did not specify the value of `use_mixup`, it is set to False.")
             options.use_mixup='False'
+        
+        if 'mixup_batch_prop' in Config['optimization']:
+            options.use_mixup=Config.get('optimization', 'mixup_batch_prop')
+        else:
+            options.mixup_batch_prop=float(1.0) if options.use_mixup=='True' else float(0.0)
+            print("You did not specify the value of `mixup_batch_prop`, it is set to {}%.".format(options.mixup_batch_prop*100))
 
         if 'beta_coef' in Config['optimization']:
             options.beta_coef=Config.get('optimization', 'beta_coef')
