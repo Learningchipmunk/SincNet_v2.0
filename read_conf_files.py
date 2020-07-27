@@ -24,6 +24,7 @@ def str_to_bool(s):
     elif s == 'False':
          return False
     else:
+         print(s)
          raise ValueError 
 
 
@@ -96,15 +97,34 @@ def read_conf():
 
 
     #[optimization]
-    #[optimization]
     if('optimization' in Config.sections()):
         options.lr=Config.get('optimization', 'lr')
+
+        if 'use_scheduler' in Config['optimization']:
+            options.use_scheduler=Config.get('optimization', 'use_scheduler')
+        else:
+            print("You did not specify the value of `use_scheduler`, it is set to False.")
+            options.use_scheduler='False'
+
+        if 'scheduler_patience' in Config['optimization']:
+            options.scheduler_patience=Config.get('optimization', 'scheduler_patience')
+        else:
+            options.scheduler_patience=2
+            print("You did not specify the value of `scheduler_patience`, it is set to {}.".format(options.scheduler_patience))
+            
+        if 'scheduler_factor' in Config['optimization']:
+            options.scheduler_factor=Config.get('optimization', 'scheduler_factor')
+        else:
+            options.scheduler_factor=0.5
+            print("You did not specify the value of `scheduler_factor`, it is set to {}.".format(options.scheduler_factor))
+
+
         options.batch_size=Config.get('optimization', 'batch_size')
         if 'Batch_dev' in Config['optimization']:
             options.Batch_dev=Config.get('optimization', 'Batch_dev')
         else:
-            print("You did not specify the value of `Batch_dev`, it is set to 32.")
             options.Batch_dev=32
+            print("You did not specify the value of `Batch_dev`, it is set to {}.".format(options.Batch_dev))
 
         if 'patience' in Config['optimization']:
             options.patience=Config.get('optimization', 'patience')
@@ -122,6 +142,12 @@ def read_conf():
             print("You did not specify the value of `train_acc_period`, it is set to 5.")
             options.train_acc_period=5
         
+        if 'fact_amp' in Config['optimization']:
+                options.fact_amp=Config.get('optimization', 'fact_amp')
+        else:
+            options.fact_amp=0.2
+            print("You did not specify the value of `fact_amp`, it is set to {}.".format(options.fact_amp))
+
         if 'use_mixup' in Config['optimization']:
             options.use_mixup=Config.get('optimization', 'use_mixup')
         else:
@@ -129,7 +155,7 @@ def read_conf():
             options.use_mixup='False'
         
         if 'mixup_batch_prop' in Config['optimization']:
-            options.use_mixup=Config.get('optimization', 'mixup_batch_prop')
+            options.mixup_batch_prop=Config.get('optimization', 'mixup_batch_prop')
         else:
             options.mixup_batch_prop=float(1.0) if options.use_mixup=='True' else float(0.0)
             print("You did not specify the value of `mixup_batch_prop`, it is set to {}%.".format(options.mixup_batch_prop*100))

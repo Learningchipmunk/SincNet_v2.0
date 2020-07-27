@@ -23,10 +23,10 @@ import matplotlib.pyplot as plt
 import tqdm
 
 ## Local files imports:
-from Models import MLP, flip
+from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
 from read_conf_files import read_conf, str_to_bool
-from utils import Optimizers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel
+from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel
 from training_and_acc_fun import train, accuracy
 
 
@@ -81,6 +81,9 @@ class_act=list(map(str, options.class_act.split(',')))
 
 #[optimization]
 lr=float(options.lr)
+use_scheduler = str_to_bool(options.use_scheduler)
+scheduler_patience = int(options.scheduler_patience)
+scheduler_factor = float(options.scheduler_factor)
 batch_size=int(options.batch_size)
 Batch_dev=int(options.Batch_dev)
 patience=int(options.patience)
@@ -88,6 +91,7 @@ N_epochs=int(options.N_epochs)
 N_batches=int(options.N_batches)
 N_eval_epoch=int(options.N_eval_epoch)
 train_acc_period=int(options.train_acc_period)
+fact_amp=float(options.fact_amp)
 use_mixup=str_to_bool(options.use_mixup)
 beta_coef=float(options.beta_coef)
 mixup_batch_prop=float(options.mixup_batch_prop)
@@ -186,7 +190,7 @@ DNN1_arch = {'input_dim': CNN_net.out_dim,
 DNN1_net=MLP(DNN1_arch)
 DNN1_net.cuda()
 
-## Last trainable layer, has softmax as activation function see section [class] in .cfg
+## Last trainable layer, The classifier. Has logsoftmax as activation function for classification see section [class] in .cfg
 DNN2_arch = {'input_dim':fc_lay[-1] ,
           'fc_lay': class_lay,
           'fc_drop': class_drop, 
@@ -201,6 +205,9 @@ DNN2_arch = {'input_dim':fc_lay[-1] ,
 DNN2_net=MLP(DNN2_arch)
 DNN2_net.cuda()
 
+## Network that regroups all 3 networks:
+Main_net = MainNet(CNN_net, DNN1_net, DNN2_net)
+Main_net.cuda()
 
 
 print("Initialization done!")
@@ -213,6 +220,7 @@ print("Initializing optimizers... \t\t", end="")
 # Added momentum:
 momentum = 0.9 if use_mixup else 0
     
+#lr/=10
 optimizer_CNN  = optim.RMSprop(CNN_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
 optimizer_DNN1 = optim.RMSprop(DNN1_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
 optimizer_DNN2 = optim.RMSprop(DNN2_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
@@ -221,10 +229,20 @@ optimizers = Optimizers(optimizer_CNN, optimizer_DNN1, optimizer_DNN2)
 print("Optimizers are ready!")
 
 
+## Initializing all schedulers for optims:
+print("Initializing schedulers... \t\t", end="")
+scheduler_CNN  = optim.lr_scheduler.ReduceLROnPlateau(optimizer_CNN, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
+scheduler_DNN1 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN1, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
+scheduler_DNN2 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN2, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
+
+schedulers = Schedulers(scheduler_CNN, scheduler_DNN1, scheduler_DNN2)
+print("Schedulers are ready!")
+
+
 print("Creating the datasets... \t\t", end="")
 ## Creating the datasets:
-train_dataset = Dataset(tensors_lst_tr, lab_dict, data_folder, wlen, 0.2, wshift = 0, eval_mode= False, train = True)
-valid_dataset = Dataset(tensors_lst_te, lab_dict, data_folder, wlen, 0.2, wshift = wshift, eval_mode= False, train = False)
+train_dataset      = Dataset(tensors_lst_tr, lab_dict, data_folder, wlen, fact_amp = fact_amp, wshift = 0, using_mixup=use_mixup, beta_coef=beta_coef, mixup_prop=mixup_batch_prop, sameClasses = same_classes, train = True)
+valid_dataset      = Dataset(tensors_lst_te, lab_dict, data_folder, wlen, fact_amp = 0, wshift = wshift, train = False)
 print("Done!")
 
 
@@ -236,7 +254,7 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
 
 ## Batchsize can only be 1 for valid_loader because each tensor has a different shape...
 valid_loader  = torch.utils.data.DataLoader(dataset=valid_dataset,
-                                          batch_size=1,
+                                          batch_size=Batch_dev,
                                           shuffle=False)
 print("Done!")
 
@@ -248,10 +266,19 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=1 & 
 # python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu.cfg --cuda=0
 # python main.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu.cfg --cuda=1
+# python main.py --configPath=cfg/SincNet_DCASE_RedimCNN_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=1 
+# python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_try2 --cuda=1 
+# python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0Pre_EnergyPre1000_Window800_PReLu_withMixup.cfg --cuda=0
+# python main.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_Rand0PreEnergy1000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0 
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Schedulerfact0.2_Window800ms_PReLu_Drop30 --cuda=1 &
 ## Parameters that needs to change each execution:
-Training_model_file   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
+model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
+## Loads the file from options.FileName if the parameter is used:
+if(options.FileName != 'None'):
+    model_file_name = options.FileName
+#Training_model_file  += "_try2"
 Models_file_extension = ".pkl" if pt_file == 'none' else pt_file.split(".")[1]
-previous_model_path   = output_folder+ '/' + Training_model_file if pt_file == 'none' else pt_file.split(".")[0]
+previous_model_path   = output_folder+ '/' + model_file_name if pt_file == 'none' else pt_file.split(".")[0]
 Load_previous_model   = False if pt_file == 'none' else True
 previous_epoch        = 0
 inTheSameFile         = False
@@ -259,6 +286,7 @@ plotGrad              = False
 compute_matrix        = False
 n_classes             = class_lay[-1]#41 for SincNet
 same_classes          = same_classes
+is_SincNet            = "SincNet" in options.configPath
 
 
 ## are in cfg:
@@ -270,7 +298,7 @@ same_classes          = same_classes
 
 ## Loading previously trained model if needed:
 if(Load_previous_model):
-    CNN_net, DNN1_net, DNN2_net, previous_epoch = LoadPrevModel(CNN_net, DNN1_net, DNN2_net,
+    Main_net, CNN_net, DNN1_net, DNN2_net, previous_epoch = LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net,
                                                             previous_model_path, 
                                                             Models_file_extension, 
                                                             Load= Load_previous_model, 
@@ -290,14 +318,14 @@ if(Load_previous_model):
 
 
 
-train(CNN_net, DNN1_net, DNN2_net, optimizers, train_loader, valid_loader, cost, cost_onehot,
-          ## SincNet variables:
+train(Main_net, optimizers, train_loader, valid_loader, cost, cost_onehot,
+          ## Data related variables:
           wlen,
           wshift,
           n_classes,
           ## File variables:
           output_folder,
-          Training_model_file,
+          model_file_name,
           Models_file_extension,
           ## Hyper param:
           n_epoch = N_epochs,
@@ -314,6 +342,11 @@ train(CNN_net, DNN1_net, DNN2_net, optimizers, train_loader, valid_loader, cost,
           starting_epoch = previous_epoch,
           ## Tracking gradient
           plotGrad = plotGrad,
+          ## If user wishes to use a scheduler:
+          use_scheduler = use_scheduler,
+          scheduler = schedulers,
           ## If user wishes to save and compute confusion matrix:
           compute_matrix = compute_matrix,
+          ## Indicates if the network that is trained is SincNet
+          is_SincNet = True,
           cuda=True)

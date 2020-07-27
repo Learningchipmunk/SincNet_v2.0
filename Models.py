@@ -351,7 +351,7 @@ class SincNet(nn.Module):
          current_input=int((current_input-self.cnn_len_filt[i]+1)/self.cnn_max_pool_len[i])
 
        ## output dimension of the network is computed dynamically
-       self.out_dim=current_input*N_filt
+       self.out_dim=current_input*N_filt#N_filt=int(self.cnn_N_filt[-1])
 
 
 
@@ -382,7 +382,7 @@ class SincNet(nn.Module):
          if self.cnn_use_batchnorm[i]==False and self.cnn_use_laynorm[i]==False:
           x = self.drop[i](self.act[i](F.max_pool1d(self.conv[i](x), self.cnn_max_pool_len[i])))
 
-       
+       # Flattens the tensor:       
        x = x.view(batch,-1)
 
        return x
@@ -496,3 +496,16 @@ class MLP(nn.Module):
           
       return x
 
+
+## Creates the main network that contains all the networks:
+class MainNet(nn.Module):
+    
+    def __init__(self, CNN_net, DNN1_net, DNN2_net):
+        super(MainNet, self).__init__()
+        self.CNN_net  = CNN_net
+        self.DNN1_net = DNN1_net
+        self.DNN2_net = DNN2_net
+
+    def forward(self, x):
+        x = self.DNN2_net(self.DNN1_net(self.CNN_net(x)))
+        return x

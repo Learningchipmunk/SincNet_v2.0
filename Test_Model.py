@@ -16,17 +16,22 @@ python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_8
 python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu_Drop30.cfg --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_PReLu.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_RedimCNN_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --cuda=1 
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_try3 --cuda=1
 """
 import numpy as np
 import torch
 import torch.nn as nn
 
 ## Local files imports:
-from Models import MLP, flip
+from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
 from read_conf_files import read_conf, str_to_bool
-from utils import Dataset, LoadPrevModel
+from utils import Dataset, LoadPrevModel #,Dataset2
 from training_and_acc_fun import accuracy
+#from old_acc_fun import accuracy as old_accuracy
 
 ## <!>---------------------------- Reading the config file ----------------------------<!> ##
 # Reading cfg file
@@ -151,41 +156,55 @@ DNN2_arch = {'input_dim':fc_lay[-1] ,
 DNN2_net=MLP(DNN2_arch)
 DNN2_net.cuda()
 
+## Network that regroups all 3 networks:
+Main_net = MainNet(CNN_net, DNN1_net, DNN2_net)
+Main_net.cuda()
+
 
 print("Initialization done!")
 
 
 ## <!>----------------------- Getting the data relevant to the test dataset -----------------------<!> ##
-print("Getting the data relevant to the test dataset... \t\t", end="")
+print("Getting data lists and dicts... \t\t", end="")
 
 testTensorFiles = np.load("data_lists/Tensor_Test_list.npy")
+# Stores the Number of files:
+snt_te=len(testTensorFiles)
 
-data_folder_test = "Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window1000ms/"
+if("800" in options.configPath or "1000" in options.configPath):
+    data_folder_test = "Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window1000ms/"
+else:
+    data_folder_test = "Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window4000ms_Random0Padding/"
 
 lab_dict = np.load("data_lists/DCASE_tensor_test_labels.npy").item()
 print("Done!")
 
 
 print("Creating the dataset and dataloader... \t\t", end="")
+## For old accuracy:
+#test_dataset  = Dataset2(testTensorFiles, lab_dict, data_folder_test, wlen, 0.2, wshift = wshift, train = False)
+#test_loader   = torch.utils.data.DataLoader(dataset=test_dataset,batch_size=1,shuffle=False, drop_last=False)
+## For new accuracy:
 test_dataset  = Dataset(testTensorFiles, lab_dict, data_folder_test, wlen, 0.2, wshift = wshift, train = False)
-test_loader  = torch.utils.data.DataLoader(dataset=test_dataset,batch_size=1,shuffle=False)
+test_loader   = torch.utils.data.DataLoader(dataset=test_dataset,batch_size=Batch_dev,shuffle=False, drop_last=False)
 print("Done!")
 
 
 # test.cfg
 ## Parameters that needs to change each execution:
-Training_model_file   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
+model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 if(options.FileName != 'None'):
-    Training_model_file = options.FileName
+    model_file_name = options.FileName
 
 Models_file_extension = ".pkl" if pt_file == 'none' else pt_file.split(".")[1]
-previous_model_path   = output_folder+ '/' + Training_model_file if pt_file == 'none' else pt_file.split(".")[0]
+previous_model_path   = output_folder+ '/' + model_file_name if pt_file == 'none' else pt_file.split(".")[0]
 Load_previous_model   = True
 at_epoch              = 100
 inTheSameFile         = False## To change depending on versions
 compute_matrix        = True
 n_classes             = class_lay[-1]#41 for SincNet
 sincnet_version       = 2## To change depending on versions
+Save_net_for_kaggle   = False
 
 
 ## Adapts the paths if it is the version 1 of SincNet:
@@ -196,7 +215,7 @@ if(sincnet_version == 1):
 
 ## Loading previously trained model if needed:
 #Function was modified especially for .py folders:
-CNN_net, DNN1_net, DNN2_net, _ = LoadPrevModel(CNN_net, DNN1_net, DNN2_net, 
+Main_net, CNN_net, DNN1_net, DNN2_net, _ = LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, 
                                                 previous_model_path, 
                                                 Models_file_extension, 
                                                 Load= Load_previous_model, 
@@ -205,13 +224,19 @@ CNN_net, DNN1_net, DNN2_net, _ = LoadPrevModel(CNN_net, DNN1_net, DNN2_net,
                                                 evalMode = True)
 
 
-best_class_error, cur_loss, window_error = accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, cost, n_classes,
+best_class_error, cur_loss, window_error = accuracy(Main_net, test_loader, cost, n_classes,
                                                     Batch_dev, wlen, wshift,
-                                                    matrix_name = Training_model_file+"_test_dataset", compute_matrix = compute_matrix,
+                                                    matrix_name = model_file_name+"_test_dataset", compute_matrix = compute_matrix,
                                                     cuda=True)
+
 
 print("\n")
 print("Test set : ")
 print('test loss: %.3f'       %(cur_loss))
 print('window acc: %.3f'      %(1-window_error))
 print('best class acc: %.3f'  %(1-best_class_error))
+
+if(Save_net_for_kaggle):
+    print("\n")
+    print("Saved model `{0}` in `{1}`.".format(model_file_name, previous_model_path))
+    torch.save(Main_net.state_dict(), previous_model_path + "_Main_net" + Models_file_extension)

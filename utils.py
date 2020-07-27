@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 import torch.utils.data
 from matplotlib.lines import Line2D
 
+
 ## Loads previously trained model:
 #Function was modified especially for .py folders:
-def LoadPrevModel(CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_extension, Load, inSameFile = True, at_epoch = 0, evalMode = False):
+def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_extension, Load, inSameFile = True, at_epoch = 0, evalMode = False):
     """Loads previously trained model.
 
     Args:
@@ -62,10 +63,18 @@ def LoadPrevModel(CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_exte
         if(evalMode):DNN2_net.eval()
     
     #print(CNN_net.state_dict()['conv.0.low_hz_'][0])
+
+    ## Putting all the nets into Main_net:
+    Main_net.CNN_net  = CNN_net
+    Main_net.DNN1_net = DNN1_net
+    Main_net.DNN2_net = DNN2_net
+    
+    if(evalMode):Main_net.eval()
+
     
     print("Models from " + model_file_path + " were loaded successfully!")
     
-    return CNN_net, DNN1_net, DNN2_net, at_epoch + 1
+    return Main_net, CNN_net, DNN1_net, DNN2_net, at_epoch
 
 
 
@@ -230,10 +239,220 @@ def mixup(data, targets, beta_coef, n_classes, sameClasses = False, debug = Fals
 
 
 ## <!>------------------------------------ Class Definitions: ------------------------------------<!> ##
-## Dataset for train tensors:
+
+## Dataset that loads tensors:
 class Dataset(torch.utils.data.Dataset):
+    'Characterizes a dataset for PyTorch'
+    def __init__(self, list_IDs, labels, path, wlen, fact_amp=0, wshift=0, using_mixup=False, beta_coef=0.4, mixup_prop=1, sameClasses = False, train = False):
+        'Initialization'
+        self.labels = labels
+        self.list_IDs = list_IDs
+        self.path = path
+        
+        ## SincNet's Window length:
+        self.wlen     = wlen
+        self.wshift   = wshift
+        self.fact_amp = fact_amp
+        self.train    = train
+        
+        ## Mixup variables:
+        self.using_mixup = using_mixup
+        self.beta_coef  = beta_coef
+        self.mixup_prop  = mixup_prop
+        self.sameClasses = sameClasses
+        
+        
+        ## Initializes the dictionary of the indicies of each tensor grouped by class:
+        self.tensor_by_class_dict = {}
+        
+        ## <!>------------- For testloader or valid loader: -------------<!> ##
+        if(not self.train):
+            self.list_IDs_chunks = []
+        
+        ## Stores the number of classes:
+        self.n_classes = 0
+            
+        ## Go through all the files and gets their lenght:
+        for i, el in enumerate(self.list_IDs):
+            ## Reads tensor with ID el:
+            X = torch.load(self.path + el)#removed ".pt", it was already in my IDs
+            y = self.labels[el]
+            
+            
+            if(not self.train):
+                ## Number of frames extracted from tensors
+                N_fr=int((X.shape[0]-wlen)/(wshift))+1
+
+                ## Appends the (tensor idenx in list_ID, chunk number) to the list of IDs and chunks
+                self.list_IDs_chunks += [(i, j) for j in range(0, N_fr)]
+            
+            ## Stores the indices of tensors in tensor list by class in the dict:
+            if self.tensor_by_class_dict.get(y) is None:
+                ## Adds the new element as a singleton in a list:
+                self.tensor_by_class_dict[y] = [i]
+
+                ## Updates the number of classes:
+                self.n_classes              += 1
+            else:
+                l = self.tensor_by_class_dict[y]
+                l.append(i)
+                self.tensor_by_class_dict[y] = l
+                
+
+        
+        ## Sets the size of dataset depending on the type:
+        if self.train:
+            self.number_of_samples = len(self.list_IDs)
+        else:
+            self.number_of_samples = len(self.list_IDs_chunks)
+            
+
+    def onehot(self, label, n_classes):
+        """Returns a one hot encoded version of the labels.
+
+        Args:
+            label (Torch.Tensor): A tensor of type long wich describes the labels as integers.
+            n_classes (int): The number of classes.
+
+        Returns:
+            (Torch.Tensor):  One hot encoded labels.
+        """
+        onehot_label = torch.zeros(n_classes)
+        onehot_label[label] = 1
+        return onehot_label
+
+    def __len__(self):
+        'Denotes the total number of samples'
+        return self.number_of_samples
+    
+    def __getitem__(self, index):
+        'Generates one sample of data'
+        
+        # Selecting sample
+        if self.train:
+            ID                       = self.list_IDs[index]
+        else:
+            tensor_idx, chunk_number = self.list_IDs_chunks[index]
+            ID                       = self.list_IDs[tensor_idx]
+         
+        # Load data and its label 
+        X = torch.load(self.path + ID)#remove ".pt", it was already in my IDs
+        y = self.labels[ID]
+
+        
+        ## Modifications for SincNet:
+        if(not self.train):
+            if(self.wshift == 0):
+                print("Error, for validation or test set wshift can't be equal to 0!")
+            
+            ##Initializes the window accordingly to chunk number:
+            beg_samp = chunk_number * self.wshift
+            end_samp = beg_samp + self.wlen
+            
+            return X[beg_samp:end_samp], y, tensor_idx
+
+        else:            
+            ## Stores the lenght of the signal:
+            snt_len = X.shape[0]
+
+            ## Randomly amplifies the signal by rand_amp factor
+            rand_amp = np.random.uniform(1.0-self.fact_amp,1+self.fact_amp)
+
+            if(snt_len < self.wlen):
+                print("Error, file too small! Size is equal to {0} and should be at least {1}.".format(snt_len, self.wlen))
+            ## Chooses a random chunk of the signal:
+            snt_beg = 0 if snt_len-self.wlen-1 in (0, -1) else np.random.randint(snt_len-self.wlen-1)
+            snt_end = snt_beg + self.wlen
+            
+            ## Creates the random chunk:
+            data = X[snt_beg:snt_end]
+            
+            ## Boolean that indicates if we used mixup for this sample of data:
+            used_mixup = False
+            
+            ## Rand variable That decides if we mixup or not:
+            uniform01 = np.random.uniform()
+            
+            if self.using_mixup:
+                ## Gets the data for mixup:
+                if self.sameClasses:
+                    data_mix, y2 = self.get_item_randomly(y)
+                else:
+                    data_mix, y2 = self.get_item_randomly()
+                    
+                # Converts labels into one_hot encoded labels:
+                y  = self.onehot(y,  self.n_classes)    
+                y2 = self.onehot(y2, self.n_classes)
+            
+                ## Gets the mixup coef:
+                mixup_var = np.random.beta(self.beta_coef, self.beta_coef)
+                
+                ## After reading an article, it seems best to take coefs > 0.5
+                if mixup_var <= 0.5:
+                    mixup_var = 1 - mixup_var
+                
+                ## Prop
+                if uniform01 <= self.mixup_prop:
+                    ## Mixing up data:
+                    data = data * mixup_var + data_mix * (1. - mixup_var)
+
+                    ## Mixing labels:
+                    y    = y    * mixup_var + y2       * (1. - mixup_var)
+
+                    ## States that we used mixup:
+                    used_mixup = True
+                
+
+            ## Amplifies the signal:
+            data *= rand_amp
+            
+            ## Returns a random amplified chunk of the signal (can be mixed up):
+            if(self.using_mixup):
+                return data, y , used_mixup
+            else :
+                return data, y
+    
+
+    def get_item_randomly(self, lab = -1):
+        if(not self.train):
+            print("Warning, user should not use this function for test loaders or valid loaders.")
+        
+        ## Different 
+        if lab != -1 :
+            ## Gets the total number of tensors labeled lab:
+            N = len(self.tensor_by_class_dict[lab])  
+        else:
+            ## Gets the total number of tensors:
+            N = len(self.list_IDs)
+        
+        ## Chooses randomly one tensor:
+        idx = np.random.randint(0, N)
+        
+        ## Stores the index of the tensor:
+        idx_tensor = self.tensor_by_class_dict[lab][idx] if lab != -1 else idx
+        
+        ## Stores the ID of the tensor:
+        ID = self.list_IDs[idx_tensor]
+        
+        ## Loads the tensor and its label:
+        X = torch.load(self.path + ID)#removed ".pt", it was already in my IDs
+        y = self.labels[ID]
+            
+        ## Stores the length of the signal:
+        snt_len = X.shape[0]
+        
+        ## Chooses a random chunk of the signal:
+        snt_beg = 0 if snt_len-self.wlen-1 in (0, -1) else np.random.randint(snt_len-self.wlen-1)
+        snt_end = snt_beg + self.wlen
+
+        ## Returns the random chunk of the signal:
+        return X[snt_beg:snt_end], y
+
+
+## Naive dataset for train tensors:
+class Dataset2(torch.utils.data.Dataset):
   'Characterizes a dataset for PyTorch'
-  def __init__(self, list_IDs, labels, path, wlen, fact_amp, wshift=0, eval_mode = False, train = False):
+  def __init__(self, list_IDs, labels, path, wlen, fact_amp, wshift=0, train = False):
         'Initialization'
         self.labels = labels
         self.list_IDs = list_IDs
@@ -247,32 +466,14 @@ class Dataset(torch.utils.data.Dataset):
         
         ## <!>------------- For testloader or for evaluating dataset performance: -------------<!> ##
         ##Initializes the window:
-        self.test_mode            = eval_mode
         self.beg_samp             = 0
         self.end_samp             = wlen
         self.valid_sample_number  = 0
         self.current_valid_sample = None 
         self.current_valid_label  = None
-        
-        ## Storing the number of samples:
-        if(self.test_mode):
-            self.number_of_samples = 0
-            
-            ## Go through all the files and gets their lenght:
-            for el in self.list_IDs:
-                ## Reads tensor with ID el:
-                X = torch.load(self.path + el)#removed ".pt", it was already in my IDs
-                y = self.labels[el]
-                
-                ## Number of frames extracted from tensors
-                N_fr=int((X.shape[0]-wlen)/(wshift))
-                
-                ## Counter the number of total extracted frames:
-                self.number_of_samples += N_fr
-        else:
-            self.number_of_samples = len(self.list_IDs)
-            
 
+        ## Stores the number of samples:
+        self.number_of_samples = len(self.list_IDs)
 
 
   def __len__(self):
@@ -283,56 +484,22 @@ class Dataset(torch.utils.data.Dataset):
         'Generates one sample of data'
         ID = self.list_IDs[index]
         
-        # Selecting sample
-        if self.test_mode:
-            ID = self.list_IDs[self.valid_sample_number]        
-        
-        
         ## Modifications for SincNet:
-        if(self.test_mode):
-            if(self.wshift == 0):
-                print("Error, for validation set wshift can't be equal to 0!")
-            
-            ## Reinitializes the dataset if the sample number has exceeded the total amount of samples:
-            if(self.valid_sample_number >= self.number_of_samples):
-                self.valid_sample_number = 0
-            
-            ## Checks if we need to load a new sample:
-            if(self.current_valid_sample is None or self.end_samp >= self.current_valid_sample.shape[0]):
-                self.current_valid_sample = torch.load(self.path + ID)#remove ".pt", it was already in my IDs
-                self.current_valid_label  = self.labels[ID]
-                
-                ## Increments the next sample number
-                self.valid_sample_number += 1
-                
-                ##Initializes the window:
-                self.beg_samp = 0
-                self.end_samp = wlen
-            
-            X = self.current_valid_sample[self.beg_samp:self.end_samp]
-            y = self.current_valid_label
-            
-            self.beg_samp += self.wshift
-            self.end_samp  = self.beg_samp + self.wlen
-            
-            return X, y
+        # Load data and get label 
+        X = torch.load(self.path + ID)#remove ".pt", it was already in my IDs
+        y = self.labels[ID]
+        
+        if(self.train):
 
+            snt_len = X.shape[0]
+            rand_amp = np.random.uniform(1.0-self.fact_amp,1+self.fact_amp)
+
+            snt_beg = 0 if snt_len-self.wlen-1 in (0, -1) else np.random.randint(snt_len-self.wlen-1)
+            snt_end = snt_beg + self.wlen
+
+            return X[snt_beg:snt_end]*rand_amp, y
         else:
-            # Load data and get label 
-            X = torch.load(self.path + ID)#remove ".pt", it was already in my IDs
-            y = self.labels[ID]
-            
-            if(self.train):
-
-                snt_len = X.shape[0]
-                rand_amp = np.random.uniform(1.0-self.fact_amp,1+self.fact_amp)
-
-                snt_beg = 0 if snt_len-self.wlen-1 in (0, -1) else np.random.randint(snt_len-self.wlen-1)
-                snt_end = snt_beg + self.wlen
-
-                return X[snt_beg:snt_end]*rand_amp, y
-            else:
-                return X, y
+            return X, y
 
 def NLLL_onehot(input, target, reduction= "mean"):
     
@@ -368,3 +535,17 @@ class Optimizers(object):
         self.optimizer_CNN.zero_grad() 
         self.optimizer_DNN1.zero_grad()
         self.optimizer_DNN2.zero_grad()
+
+
+# Dummy class Created to regroup all schedulers into a single object:
+class Schedulers(object):
+    
+    def __init__(self, scheduler_CNN, scheduler_DNN1, scheduler_DNN2):
+        self.scheduler_CNN  = scheduler_CNN
+        self.scheduler_DNN1 = scheduler_DNN1
+        self.scheduler_DNN2 = scheduler_DNN2
+        
+    def step(self, metric):
+        self.scheduler_CNN.step(metric)
+        self.scheduler_DNN1.step(metric)
+        self.scheduler_DNN2.step(metric)

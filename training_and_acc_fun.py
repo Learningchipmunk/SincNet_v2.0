@@ -8,7 +8,7 @@ from utils import plot_grad_flow, mixup
 from Confusion_Matrix import confusion_matrix
 
 ## <!>---------------------------- Training and accuracy functions ----------------------------<!>
-def accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, criterion, n_classes,
+def accuracy(net, test_loader, criterion, n_classes,
              ## SincNet Params
              Batch_dev, wlen, wshift, 
              ## Confusion_Matrix param:
@@ -17,9 +17,7 @@ def accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, criterion, n_classes,
     """ This is the function that computes the accuracy of the Network.
 
     Args:
-        CNN_net (nn.Module): inherits from nn.Module and is a network.
-        DNN1_net (nn.Module): inherits from nn.Module and is a network.
-        DNN2_net (nn.Module): inherits from nn.Module and is a network.
+        net (nn.Module): inherits from nn.Module and is a network.
         test_loader (torch.utils.data.DataLoader): the test data loader.
         criterion (nn.Loss): is the loss function.
         Batch_dev (int): is the number of test tensors that are stored at once in test loop.
@@ -35,9 +33,7 @@ def accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, criterion, n_classes,
 
 
     ## Modifs pour SincNet
-    CNN_net.eval()
-    DNN1_net.eval() 
-    DNN2_net.eval()
+    net.eval()
     
 
     loss_sum=0
@@ -53,77 +49,117 @@ def accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, criterion, n_classes,
         mat = None
         qty = None
 
+        ## Initialisation of storing units for testing:
+        stored_outs    = 0
+        stored_labels  = 0
+        stored_idx     = 0
+
+
         ## For SincNet, information in testloader is raw and can be of various lengths!
         for data in test_loader:
-            ## Increments the number of batches in test_loader
-            snt_te += 1
-
-            ## Stores data from test_loader
-            audios, labels = data
-            audios = audios[0]#We take the first and only tensor...
+            ## Stores data from test_loader:
+            audios, labels, file_ids = data
             
+            ## Switches to cuda:
             if cuda:
                 audios = audios.type(torch.cuda.FloatTensor)
                 labels = labels.type(torch.cuda.LongTensor)
-                         
             
             
-            ## split signals into chunks of wlen
-            beg_samp=0
-            end_samp=wlen
+            ## <!> Splits the data by file: time_complexity = O(batch_size) and space_complexity = O(Number_Of_Files)
+            section  = []
+            ids_list = []
+            current_idx = file_ids[0].item()
+            ids_list.append(current_idx)
+            for i, el in enumerate(file_ids):
+                current_el = el.item()
+                if current_el != current_idx:
+                    current_idx = current_el
+                    ids_list.append(current_idx)
+                    section.append(i - sum(section))
 
-            N_fr=int((audios.shape[0]-wlen)/(wshift))
-            #print(audios.shape[0], wlen, N_fr, audios.shape)
+            ## Last section is added:    
+            section.append(audios.size(0) - sum(section))
 
-            ## Var initialization
-            sig_arr=torch.zeros([Batch_dev,wlen]).float().cuda().contiguous()
+            ## Algorithm that splits the tensors by file:
+            X_split = torch.split(audios, section)
+            y_split = torch.split(labels, section)
+
+            assert(len(X_split) == len(y_split))
+            ## <!> EndSplit <!>
+
             
-            lab= Variable((torch.zeros(N_fr+1) + labels[0]).cuda().contiguous().long())
-            pout=Variable(torch.zeros(N_fr+1,n_classes).float().cuda().contiguous())
+            ## Processes file by file the data:
+            for i in range(len(X_split)):# nbre_fichier_par_batch= len(X_split)
+                ## Stores the current id:
+                current_idx    = ids_list[i]
+                current_data   = X_split[i] if len(X_split) >= 1 else X_split
+                current_labels = y_split[i] if len(y_split) >= 1 else y_split
 
+                if type(stored_outs) is not torch.Tensor:
+                    stored_idx    = current_idx
+                    stored_outs   = net(current_data)
+                    stored_labels = current_labels
 
-            count_fr=0
-            count_fr_tot=0
-            while end_samp<audios.shape[0]:
-                sig_arr[count_fr,:]=audios[beg_samp:end_samp]
+                else:
 
-                ## Shifts the signal every iteration
-                beg_samp=beg_samp+wshift
-                end_samp=beg_samp+wlen
+                    if(stored_idx == current_idx):
+                        stored_outs   = torch.cat([stored_outs, net(current_data)], dim=0)
+                        stored_labels = torch.cat([stored_labels, current_labels], dim=0)
 
-                count_fr=count_fr+1
-                count_fr_tot=count_fr_tot+1
+                    else:
+                        #here, pout is equal to stored_outs
 
-                if count_fr==Batch_dev:
-                    inp=Variable(sig_arr)
-                    pout[count_fr_tot-Batch_dev:count_fr_tot,:] = DNN2_net(DNN1_net(CNN_net(inp)))
-                    count_fr=0
-                    sig_arr=torch.zeros([Batch_dev,wlen]).float().cuda().contiguous()
+                        ## Predicts for every chunk of audio the label and counts how many time it got it correctly
+                        pred = torch.max(stored_outs,dim=1)[1]
+                        loss = criterion(stored_outs, stored_labels.long())
+                        err  = torch.mean((pred!=stored_labels.long()).float())
 
-            if count_fr>0:
-                inp=Variable(sig_arr[0:count_fr])
-                pout[count_fr_tot-count_fr:count_fr_tot,:]=DNN2_net(DNN1_net(CNN_net(inp)))
+                        ## Updates the confusion matrix:
+                        if(compute_matrix):
+                            mat, qty = confusion_matrix(mat, qty, pred=pred, labels=stored_labels, write_results = False, name = "Pas Important", cuda = True)
 
+                        ## Updates the error that I use here:
+                        loss_sum=loss_sum+loss.detach()
+                        err_sum=err_sum+err.detach()
 
+                        ## Sum the probability over the columns, then it stores the value and the position of the max. (Lionel's Method)
+                        [val,best_class]=torch.max(torch.sum(stored_outs,dim=0), 0)
+                        err_sum_snt=err_sum_snt+(best_class!=stored_labels[0]).float()
+
+                        ## Stores new data:
+                        stored_outs   = net(current_data)
+                        stored_labels = current_labels
+                        stored_idx    = current_idx
+
+                        ## Updates the number of signals
+                        snt_te  += 1
+        
+        ## Last File is not processed by the algorithm above...
+        if(stored_outs.size(0) != 0):
             ## Predicts for every chunk of audio the label and counts how many time it got it correctly
-            pred=torch.max(pout,dim=1)[1]
-            loss = criterion(pout, lab.long())
-            err = torch.mean((pred!=lab.long()).float())
-            
+            pred = torch.max(stored_outs,dim=1)[1]
+            loss = criterion(stored_outs, stored_labels.long())
+            err  = torch.mean((pred!=stored_labels.long()).float())
+
             ## Updates the confusion matrix:
             if(compute_matrix):
-                mat, qty = confusion_matrix(mat, qty, pred=pred, labels=lab, write_results = False, name = "Pas Important", cuda = True)
+                mat, qty = confusion_matrix(mat, qty, pred=pred, labels=stored_labels, write_results = False, name = "Pas Important", cuda = True)
 
             ## Updates the error that I use here:
             loss_sum=loss_sum+loss.detach()
             err_sum=err_sum+err.detach()
 
             ## Sum the probability over the columns, then it stores the value and the position of the max. (Lionel's Method)
-            [val,best_class]=torch.max(torch.sum(pout,dim=0), 0)
-            err_sum_snt=err_sum_snt+(best_class!=lab[0]).float()
-
+            [val,best_class]=torch.max(torch.sum(stored_outs,dim=0), 0)
+            err_sum_snt=err_sum_snt+(best_class!=stored_labels[0]).float()
             
-        
+            ## Updates the number of signals
+            snt_te  += 1
+
+        ## Deletes everything that is stored:
+        del stored_outs, stored_labels                  
+
         ## mean Error of best class:
         err_tot_dev_snt=err_sum_snt/snt_te
         
@@ -138,16 +174,14 @@ def accuracy(CNN_net, DNN1_net, DNN2_net, test_loader, criterion, n_classes,
             mat = confusion_matrix(mat, qty, write_results = True, name = matrix_name, cuda = True)
             
             
-    CNN_net.train()
-    DNN1_net.train() 
-    DNN2_net.train()
+    net.train()
 
     return (err_tot_dev_snt, loss_tot_dev, err_tot_dev)
 
 
 
-def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, criterion, criterion_onehot,
-          ## SincNet variables:
+def train(net, optimizer, train_loader, valid_loader, criterion, criterion_onehot,
+          ## Data scpecific variables:
           wlen,
           wshift,
           n_classes,
@@ -170,16 +204,19 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
           starting_epoch = 0,
           ## If user wishes to plot grad:
           plotGrad = False,
+          ## If user wishes to use a scheduler:
+          use_scheduler = False,
+          scheduler = None,
           ## If user wishes to save and compute confusion matrix:
           compute_matrix = False,
+          ## Indicates if the network that is trained is SincNet
+          is_SincNet = False,
           ## Is Cuda activated?
           cuda=True):
     """The train function
 
     Args:
-        CNN_net (nn.Module): inherits from nn.Module and is a network.
-        DNN1_net (nn.Module): inherits from nn.Module and is a network.
-        DNN2_net (nn.Module): inherits from nn.Module and is a network.
+        net (nn.Module): inherits from nn.Module and is a network.
         optimizer (torch.optim): Net optimizer for learning.
         train_loader (torch.utils.data.DataLoader): the train data loader.
         valid_loader (torch.utils.data.DataLoader): the test data loader.
@@ -201,14 +238,15 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
                                 he needs to set this attribute's value to True. Defaults to False.
         starting_epoch (int, optional): The initial starting epoch. (If the model was loaded, it can be different from 0). Defaults to 0.
         plotGrad (bool, optional): Indicates if the user desires to plot Gradient flow. Defaults to False.
+        use_scheduler (bool, optional): Indicates if the user desires to use a scheduler, it needs to be set to True if so. Defaults to False.
+        scheduler (object, optional) : Is the scheduler for thje network. Defaults to None.
         compute_matrix (bool, optional): Indicates if user wants to compute and save confusion matrix. Defaults to False.
+        is_SincNet (bool, optional): Indicates if the network that is trained is SincNet, it should be set to True if so. Defaults to False.
         cuda (bool, optional): Indicates if net is on cuda. Defaults to True.
     """
 
 
-    CNN_net.train()
-    DNN1_net.train() 
-    DNN2_net.train()
+    net.train()
 
     ## Initialization:
     min_loss = float("inf")
@@ -225,9 +263,11 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
         string = ""
         if(same_classes):
             string = "Same Class "
-        print(" and using {1}mixup with a Beta({0}, {0}) distribution.".format(beta_coef, string))
+        print(" and using {1}mixup with a Beta({0}, {0}) distribution and a mixup proportion = {2}.".format(beta_coef, string, mixup_batch_prop))
     else:
         print(".")
+    if use_scheduler:
+        print("Training is optimized with a scheduler.")
     print("Total number of classes is equal to : {}".format(n_classes))
     
     ## Continues training beyond n_epoch if algorithm did not converge:
@@ -245,37 +285,26 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
             running_mixup_percentage = 0.0
 
             for i, data in enumerate(train_loader, 0):
-
-                # get the inputs
-                inputs, labels = data
                 
-                # Mixing up data if required by user:
-                if(use_mixup and mixup_batch_prop==1.0):
-                    inputs, labels, mixup_percentage = mixup(inputs, labels, beta_coef, n_classes, same_classes)
+                # Getting Mixed up data if required by user:
+                if(use_mixup):
+                    inputs, labels, mixup_states     = data
+                    mixup_percentage                 = mixup_states.sum().item() / inputs.size(0)
                     running_mixup_percentage         = 0.33*mixup_percentage + 0.66*running_mixup_percentage
-                elif(use_mixup):
-                    ## Prop /times batch_size troncated gives us the mixed up data batch size:
-                    mixup_batch_size = int(inputs.size(0) * mixup_batch_prop)
+                else:
+                    # gets the regular inputs
+                    inputs, labels = data
 
-                    ## Mixes up data on chosen batch:
-                    inputs[:mixup_batch_size,:], labels[:mixup_batch_size], mixup_percentage = mixup(inputs[:mixup_batch_size,:], 
-                                                                labels[:mixup_batch_size], beta_coef, n_classes, same_classes)
-
-                    # Total mixup percentage is the proportion of mixed up data times the mixup percentage of the mixed up data:
-                    mixup_percentage                *= mixup_batch_prop
-                    running_mixup_percentage         = 0.33*mixup_percentage + 0.66*running_mixup_percentage
-                    
 
                 if cuda:
                     inputs = inputs.type(torch.cuda.FloatTensor)
                     labels = labels.type(torch.cuda.LongTensor)
 
-                # print(inputs.shape)
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
                 # forward + backward + optimize
-                outputs = DNN2_net(DNN1_net(CNN_net(inputs)))
+                outputs = net(inputs)
 
                 ## Loss evaluation:
                     # We use custom made function if there is mixup envolved
@@ -290,7 +319,7 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
 
                 ## Plotting the grad for frequencies and second layer 1Dconv:
                 if(plotGrad):
-                    plot_grad_flow(CNN_net.named_parameters())   
+                    plot_grad_flow(net.named_parameters())   
                     #plot_grad_flow_simple(CNN_net.named_parameters())
 
                 optimizer.step()
@@ -319,10 +348,15 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
 
             ## Validation loop part:
             if epoch % test_acc_period == 0:
-                best_class_error, cur_loss, window_error = accuracy(CNN_net, DNN1_net, DNN2_net,valid_loader, criterion, n_classes,
+                best_class_error, cur_loss, window_error = accuracy(net, valid_loader, criterion, n_classes,
                                                                     Batch_dev, wlen, wshift,
                                                                     matrix_name = fname, compute_matrix = compute_matrix,
                                                                     cuda=cuda)
+
+                ## If user wishes to use a scheduler:
+                if(use_scheduler):
+                    scheduler.step(cur_loss)
+
 
                 ## Writing the results in the specified file:
                 with open(output_folder+"/" + fname + ".res", "a") as res_file:
@@ -345,10 +379,16 @@ def train(CNN_net, DNN1_net, DNN2_net, optimizer, train_loader, valid_loader, cr
                     ## Saves the new loss:
                     min_loss = cur_loss
 
-                    ## Saves the parameters if better:
-                    torch.save(CNN_net.state_dict(), output_folder + '/' + fname + "_CNN" + Models_file_extension)
-                    torch.save(DNN1_net.state_dict(), output_folder+ '/' + fname + "_DNN1" + Models_file_extension)
-                    torch.save(DNN2_net.state_dict(), output_folder+ '/' + fname + "_DNN2" + Models_file_extension)
+                    ## Saves the parameters if they are better:
+                    # SincNet saving method:
+                    if is_SincNet:
+                        torch.save(net.CNN_net.state_dict(), output_folder + '/' + fname + "_CNN" + Models_file_extension)
+                        torch.save(net.DNN1_net.state_dict(), output_folder+ '/' + fname + "_DNN1" + Models_file_extension)
+                        torch.save(net.DNN2_net.state_dict(), output_folder+ '/' + fname + "_DNN2" + Models_file_extension)
+                    
+                    # Regular save:
+                    torch.save(net.state_dict(), output_folder+ '/' + fname + "_Main_net" + Models_file_extension)
+                        
 
                     ## Resets the patience, we found a better net.
                     p = 0
