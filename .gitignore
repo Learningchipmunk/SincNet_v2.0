@@ -18,7 +18,7 @@ Data/*
 .docs
 
 # Ignores pycache:
-__pycache_
+__pycache__*
 
 # Ignores nohup files:
 nohup*

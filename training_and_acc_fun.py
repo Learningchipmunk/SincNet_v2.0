@@ -202,6 +202,7 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
           same_classes = False,
           ## If a Net was loaded:
           starting_epoch = 0,
+          initial_minloss = float("inf"),
           ## If user wishes to plot grad:
           plotGrad = False,
           ## If user wishes to use a scheduler:
@@ -249,7 +250,7 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
     net.train()
 
     ## Initialization:
-    min_loss = float("inf")
+    min_loss = float("inf") if starting_epoch==0 else initial_minloss
     
     ## best_epoch_number is a var that stores the number of epoch required for best performance:
     best_epoch_number = 0

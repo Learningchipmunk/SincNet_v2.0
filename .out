@@ -1,0 +1,19 @@
+/home/nlpt4239/miniconda3/envs/SincNet/lib/python3.6/site-packages/librosa/util/decorators.py:9: NumbaDeprecationWarning: An import was requested from a module that has moved location.
+Import of 'jit' requested from: 'numba.decorators', please update to use 'numba.core.decorators' or pin to Numba version 0.48.0. This alias will not be present in Numba version 0.50.0.
+  from numba.decorators import jit as optional_jit
+You did not specify the value of `fact_amp`, it is set to 0.2.
+You did not specify the value of `mixup_batch_prop`, it is set to 0.0%.
+Selecting Cuda device... 		Cuda device 0 was selected successfully!
+Initializing the Networks... 		Initialization done!
+Initializing optimizers... 		Optimizers are ready!
+Initializing schedulers... 		Schedulers are ready!
+Creating the datasets... 		Done!
+Setting up the data loaders... 		Done!
+Traceback (most recent call last):
+  File "main.py", line 306, in <module>
+    evalMode = False)
+ValueError: not enough values to unpack (expected 6, got 2)
+/home/nlpt4239/miniconda3/envs/SincNet/lib/python3.6/site-packages/librosa/util/decorators.py:9: NumbaDeprecationWarning: An import was requested from a module that has moved location.
+Import of 'jit' requested from: 'numba.decorators', please update to use 'numba.core.decorators' or pin to Numba version 0.48.0. This alias will not be present in Numba version 0.50.0.
+  from numba.decorators import jit as optional_jit
+  0%|          | 0/100 [00:00<?, ?it/s]

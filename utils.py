@@ -5,10 +5,52 @@ import matplotlib.pyplot as plt
 import torch.utils.data
 from matplotlib.lines import Line2D
 
+## Function that reads the .res file:
+def readResults(path):
+    """This function reads the .res file of a network previously trained.
+
+    Args:
+        path (string): Is the path of the directory conatined the .res file.
+        filename (string): Name of the .res file to read.
+
+    Returns:
+        (list): Returns the values inside the .res file with their associated epoch number.
+    """
+
+    ## Opens the .res
+    f = open(path, "r")
+    
+    ## Initializes the list:
+    perfs = []
+
+    ## Reads the file line by line:
+    lines = f.readlines()
+
+    for el in lines:
+
+        values = []
+        elements = el.split(" ")
+
+        ## Processes the rest of the line here:
+        elements = elements[1:]
+        for i, val in enumerate(elements):
+            if("\n" not in val):
+                ## After the epoch number there is a comma, we use it as a seperator to get the epoch number:
+                if i ==0:
+                    values.append(int(val.split(",")[0]))
+                ## now each number is preceded by an equal sign, that is why we use it as a seperator:
+                else:
+                    values.append(float(val.split("=")[1]))
+
+        perfs.append(values)
+
+    f.close()
+    return perfs
+
 
 ## Loads previously trained model:
 #Function was modified especially for .py folders:
-def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_extension, Load, inSameFile = True, at_epoch = 0, evalMode = False):
+def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_extension, Load, inSameFile = True, test_acc_period = 5, at_epoch = 0, evalMode = False):
     """Loads previously trained model.
 
     Args:
@@ -20,17 +62,23 @@ def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models
         Load (bool): The user has to set it to true if he wishes to load a previous model.
         evalMode (bool, optional): Indicates if the user wishes to evaluat the net, if true sets networks to eval(). Defaults to False.
         inSameFile (bool, optional): Indicates if the models are all saved in the same file. Defaults to True.
+        test_acc_period (int, optional): The period, in epoch, of each validation test. Defaults to 5.
         at_epoch (int, optional): The amount of epoch the model was trained on. Defaults to N_epochs.
 
     Returns:
-        (int): The current starting epoch for the loaded model. 
+        (nn.Module(x4), int, float): The current starting epoch for the loaded model and the min_loss achieved by the model. 
     """
     
     if(Load == False):
-        return 0
+        return Main_net, CNN_net, DNN1_net, DNN2_net, 0, float("inf")
     
+    ## <!>----------------- Reading old results: <!>----------------- ##
+    perfs    = readResults(model_file_path + ".res")
+    at_epoch = len(perfs)
+    min_loss = min([perfs[i][4] for i in range (0, at_epoch)])
+    at_epoch*= test_acc_period    
     
-   
+    ## <!>------------ Fetching and storing old model: ------------<!> ##
     if(inSameFile):
         ## Loading the pretrained setup file
         pretrainedSetup = torch.load(model_file_path + Models_file_extension)
@@ -73,8 +121,9 @@ def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models
 
     
     print("Models from " + model_file_path + " were loaded successfully!")
+    print("Model reached a minimum loss of {0} after {1} epochs.".format(min_loss, at_epoch))
     
-    return Main_net, CNN_net, DNN1_net, DNN2_net, at_epoch
+    return Main_net, CNN_net, DNN1_net, DNN2_net, at_epoch, min_loss
 
 
 
@@ -242,9 +291,29 @@ def mixup(data, targets, beta_coef, n_classes, sameClasses = False, debug = Fals
 
 ## Dataset that loads tensors:
 class Dataset(torch.utils.data.Dataset):
-    'Characterizes a dataset for PyTorch'
-    def __init__(self, list_IDs, labels, path, wlen, fact_amp=0, wshift=0, using_mixup=False, beta_coef=0.4, mixup_prop=1, sameClasses = False, train = False):
-        'Initialization'
+    """
+    Characterizes a dataset for PyTorch, it loads chunks of data for training and accuracy functions.
+    """
+    def __init__(self, list_IDs, labels, path, wlen, fact_amp=0, wshift=0, using_mixup=False, beta_coef=0.4, mixup_prop=1, sameClasses = False, train = False, is_fastai = False):
+        """Initialization of the DataSet.
+
+        Args:
+            list_IDs (list): A list of strings containing the names of the tensors to load.
+            labels (dict): A dictionary containing the labels corresponding to each tensor ID. 
+                           Usage: self.labels[ID] returns int (ground truth).
+            path (string): Directory location of the tensors.
+            wlen (int): Size of the window of each audio data returned. (Basically is the size of the tensor returned.)
+            fact_amp (float): Each tensor is amplified randomly with a factor of np.random.uniform(1.0-self.fact_amp,1+self.fact_amp).
+            wshift (int, optional): Is the Hop size in between valid/test chunks. Defaults to 0.
+            using_mixup (bool, optional): Indicates if user wishes to use mixup for training, it must be se to True if so. Defaults to False.
+            beta_coef (float, optional): Is the coeficient for the Bet distribution used for mixup. Defaults to 0.4.
+            mixup_prop (int, optional): Is the probability that the data gets mixed up. Parameter of a variable following a uniform distribution. 
+                                        Defaults to 1.
+            sameClasses (bool, optional): Indicates if the user wishes to mixup only data with same corresponding label, it must be se to True if so.
+                                          Defaults to False.
+            train (bool, optional): Indicates if user wishes to create a training dataset, it must be se to True if so. Defaults to False.
+            is_fastai (bool, optional): Indicates if user wishes to use fastai, it must be se to True if so. Defaults to False.
+        """
         self.labels = labels
         self.list_IDs = list_IDs
         self.path = path
@@ -257,10 +326,12 @@ class Dataset(torch.utils.data.Dataset):
         
         ## Mixup variables:
         self.using_mixup = using_mixup
-        self.beta_coef  = beta_coef
+        self.beta_coef   = beta_coef
         self.mixup_prop  = mixup_prop
         self.sameClasses = sameClasses
         
+        ## for fastai:
+        self.is_fastai   = is_fastai 
         
         ## Initializes the dictionary of the indicies of each tensor grouped by class:
         self.tensor_by_class_dict = {}
@@ -349,7 +420,11 @@ class Dataset(torch.utils.data.Dataset):
             beg_samp = chunk_number * self.wshift
             end_samp = beg_samp + self.wlen
             
-            return X[beg_samp:end_samp], y, tensor_idx
+            if self.is_fastai:
+                return X[beg_samp:end_samp], y
+            else:
+                return X[beg_samp:end_samp], y, tensor_idx
+
 
         else:            
             ## Stores the lenght of the signal:
@@ -451,9 +526,22 @@ class Dataset(torch.utils.data.Dataset):
 
 ## Naive dataset for train tensors:
 class Dataset2(torch.utils.data.Dataset):
-  'Characterizes a dataset for PyTorch'
+  """
+  Characterizes a dataset for PyTorch, it loads chunks of data for training and accuracy.
+  """
   def __init__(self, list_IDs, labels, path, wlen, fact_amp, wshift=0, train = False):
-        'Initialization'
+        """Initialization of the DataSet.
+
+        Args:
+            list_IDs (list): A list of strings containing the names of the tensors to load.
+            labels (dict): A dictionary containing the labels corresponding to each tensor ID. 
+                           Usage: self.labels[ID] returns int (ground truth).
+            path (string): Directory location of the tensors.
+            wlen (int): Size of the window of each audio data returned. (Basically is the size of the tensor returned.)
+            fact_amp (float): Each tensor is amplified randomly with a factor of np.random.uniform(1.0-self.fact_amp,1+self.fact_amp).
+            wshift (int, optional): Is the Hop size in between valid/test chunks. Defaults to 0.
+            train (bool, optional): Indicates if user wishes to create a training dataset, it must be se to True if so. Defaults to False.
+        """
         self.labels = labels
         self.list_IDs = list_IDs
         self.path = path

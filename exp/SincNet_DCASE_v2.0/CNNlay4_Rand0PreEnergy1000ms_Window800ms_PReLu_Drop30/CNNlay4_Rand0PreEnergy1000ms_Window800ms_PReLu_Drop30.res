@@ -34,12 +34,6 @@ epoch 165, running_loss_tr=0.558261 running_acc_tr=0.783352 best_class_acc_te=0.
 epoch 170, running_loss_tr=0.653547 running_acc_tr=0.779751 best_class_acc_te=0.779420 loss_te=1.183593 window_acc_te=0.698410 
 epoch 175, running_loss_tr=0.806490 running_acc_tr=0.763809 best_class_acc_te=0.781003 loss_te=1.229353 window_acc_te=0.698704 
 epoch 180, running_loss_tr=0.799703 running_acc_tr=0.786788 best_class_acc_te=0.785224 loss_te=1.229523 window_acc_te=0.697863 
-epoch 185, running_loss_tr=0.615398 running_acc_tr=0.779215 best_class_acc_te=0.778364 loss_te=1.233538 window_acc_te=0.696882 
-epoch 190, running_loss_tr=0.506499 running_acc_tr=0.841300 best_class_acc_te=0.787863 loss_te=1.224970 window_acc_te=0.702419 
-epoch 195, running_loss_tr=0.578940 running_acc_tr=0.843140 best_class_acc_te=0.778364 loss_te=1.216067 window_acc_te=0.699422 
-epoch 200, running_loss_tr=0.362787 running_acc_tr=0.861703 best_class_acc_te=0.783113 loss_te=1.225819 window_acc_te=0.705497 
-epoch 205, running_loss_tr=0.564621 running_acc_tr=0.811625 best_class_acc_te=0.791557 loss_te=1.200610 window_acc_te=0.706094 
-epoch 180, running_loss_tr=0.561045 running_acc_tr=0.805833 best_class_acc_te=0.780475 loss_te=1.228285 window_acc_te=0.701937 
 epoch 185, running_loss_tr=0.622688 running_acc_tr=0.819170 best_class_acc_te=0.781530 loss_te=1.227538 window_acc_te=0.697524 
 epoch 190, running_loss_tr=0.586227 running_acc_tr=0.794601 best_class_acc_te=0.788391 loss_te=1.244561 window_acc_te=0.699373 
 epoch 195, running_loss_tr=0.625458 running_acc_tr=0.779455 best_class_acc_te=0.785224 loss_te=1.195807 window_acc_te=0.701033 

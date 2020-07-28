@@ -18,8 +18,10 @@ python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_8
 python Test_Model.py --configPath=cfg/SincNet_DCASE_Rand0Pre_WithEnergy_Window_800_HiddenLay4_PReLu.cfg --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_RedimCNN_Rand0Pre_WithEnergy_Window_800_PReLu_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --cuda=1 
-python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_try3 --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Schedulerfact0.2_Window800ms_PReLu_Drop30 --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
 """
 import numpy as np
 import torch
@@ -79,7 +81,7 @@ class_act=list(map(str, options.class_act.split(',')))
 
 #[optimization]
 Batch_dev=int(options.Batch_dev)
-
+N_eval_epoch=int(options.N_eval_epoch)
 
 # Converting context and shift in samples
 wlen=int(fs*cw_len/1000.00)
@@ -215,11 +217,12 @@ if(sincnet_version == 1):
 
 ## Loading previously trained model if needed:
 #Function was modified especially for .py folders:
-Main_net, CNN_net, DNN1_net, DNN2_net, _ = LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, 
+Main_net, CNN_net, DNN1_net, DNN2_net, _, _ = LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, 
                                                 previous_model_path, 
                                                 Models_file_extension, 
                                                 Load= Load_previous_model, 
                                                 inSameFile = inTheSameFile,
+                                                test_acc_period = N_eval_epoch,
                                                 at_epoch = at_epoch,
                                                 evalMode = True)
 
