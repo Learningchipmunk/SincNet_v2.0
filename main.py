@@ -25,6 +25,7 @@ import tqdm
 ## Local files imports:
 from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
+from Models import SincNet2D as CNN2D
 from read_conf_files import read_conf, str_to_bool
 from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel
 from training_and_acc_fun import train, accuracy
@@ -48,10 +49,25 @@ fs=int(options.fs)
 cw_len=int(options.cw_len)
 cw_shift=int(options.cw_shift)
 
-#[cnn]
-cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
-cnn_len_filt=list(map(int, options.cnn_len_filt.split(',')))
-cnn_max_pool_len=list(map(int, options.cnn_max_pool_len.split(',')))
+#[cnn2D/1D]
+is_conv2D = options.is_conv2D
+conv_type = '2D' if is_conv2D else '1D'
+print("The file contains the config of a {} convolutional network.".format(conv_type))
+if is_conv2D:
+    #[cnn2D]
+    cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
+    cnn_len_filt_W=list(map(int, options.cnn_len_filt_W.split(',')))
+    cnn_len_filt_H=list(map(int, options.cnn_len_filt_H.split(',')))
+    cnn_energy_L=int(options.cnn_energy_L)
+    cnn_energy_stride=int(options.cnn_energy_stride)
+    cnn_max_pool_len_W=list(map(int, options.cnn_max_pool_len_W.split(',')))
+    cnn_max_pool_len_H=list(map(int, options.cnn_max_pool_len_H.split(',')))
+else:
+    #[cnn]
+    cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
+    cnn_len_filt=list(map(int, options.cnn_len_filt.split(',')))
+    cnn_max_pool_len=list(map(int, options.cnn_max_pool_len.split(',')))
+
 cnn_use_laynorm_inp=str_to_bool(options.cnn_use_laynorm_inp)
 cnn_use_batchnorm_inp=str_to_bool(options.cnn_use_batchnorm_inp)
 cnn_use_laynorm=list(map(str_to_bool, options.cnn_use_laynorm.split(',')))
@@ -95,15 +111,7 @@ fact_amp=float(options.fact_amp)
 use_mixup=str_to_bool(options.use_mixup)
 beta_coef=float(options.beta_coef)
 mixup_batch_prop=float(options.mixup_batch_prop)
-## same_classes has default value False:
-same_classes=False
-if(options.same_classes!=None):
-    same_classes=str_to_bool(options.same_classes)
-else:
-    ## If we are using mixup without specifying which type, it alerts the user.
-    if(use_mixup):
-        print("Warning: you are using mixup but you did not mention which type in config file. \n"+
-              "By default it will be set to False. You are advised to add a same_class attribute to your cfg file and set it to True or False.")    
+same_classes=str_to_bool(options.same_classes)
 seed=int(options.seed)
 
 
@@ -154,22 +162,41 @@ else:
 ## <!>------------------- Initializing the Networks with .cfg options -------------------<!> ##
 
 print("Initializing the Networks... \t\t", end="")
+
 # Feature extractor CNN
-CNN_arch = {'input_dim': wlen,
-          'fs': fs,
-          'cnn_N_filt': cnn_N_filt,
-          'cnn_len_filt': cnn_len_filt,
-          'cnn_max_pool_len':cnn_max_pool_len,
-          'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
-          'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
-          'cnn_use_laynorm':cnn_use_laynorm,
-          'cnn_use_batchnorm':cnn_use_batchnorm,
-          'cnn_act': cnn_act,
-          'cnn_drop':cnn_drop,          
-          }
+if is_conv2D:
+    CNN_arch = {'input_dim': wlen,
+            'fs': fs,
+            'cnn_N_filt': cnn_N_filt,
+            'cnn_len_filt_W': cnn_len_filt_W,
+            'cnn_len_filt_H': cnn_len_filt_H,
+            'cnn_energy_L': cnn_energy_L,
+            'cnn_energy_stride': cnn_energy_stride,
+            'cnn_max_pool_len_W': cnn_max_pool_len_W,
+            'cnn_max_pool_len_H': cnn_max_pool_len_H,
+            'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
+            'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
+            'cnn_use_laynorm':cnn_use_laynorm,
+            'cnn_use_batchnorm':cnn_use_batchnorm,
+            'cnn_act': cnn_act,
+            'cnn_drop':cnn_drop,          
+            }
+else:
+    CNN_arch = {'input_dim': wlen,
+            'fs': fs,
+            'cnn_N_filt': cnn_N_filt,
+            'cnn_len_filt': cnn_len_filt,
+            'cnn_max_pool_len':cnn_max_pool_len,
+            'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
+            'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
+            'cnn_use_laynorm':cnn_use_laynorm,
+            'cnn_use_batchnorm':cnn_use_batchnorm,
+            'cnn_act': cnn_act,
+            'cnn_drop':cnn_drop,          
+            }
 
 ## Initializes SincNet:
-CNN_net=CNN(CNN_arch)
+CNN_net=CNN2D(CNN_arch) if is_conv2D else CNN(CNN_arch)
 CNN_net.cuda()
 
 # Loading label dictionary
@@ -272,6 +299,7 @@ print("Done!")
 # python main.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_Rand0PreEnergy1000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0 
 # nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_DNN1024_Rand0PreEnergy4000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Schedulerfact0.2_Window800ms_PReLu_Drop30 --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:

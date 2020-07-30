@@ -22,6 +22,8 @@ python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Schedulerfact0.2_Window800ms_PReLu_Drop30 --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_DNN1024_Rand0PreEnergy4000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler0.2_Window800ms_PReLu_Drop30_Notebook --cuda=1
 """
 import numpy as np
 import torch
@@ -30,6 +32,7 @@ import torch.nn as nn
 ## Local files imports:
 from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
+from Models import SincNet2D as CNN2D
 from read_conf_files import read_conf, str_to_bool
 from utils import Dataset, LoadPrevModel #,Dataset2
 from training_and_acc_fun import accuracy
@@ -49,16 +52,32 @@ fs=int(options.fs)
 cw_len=int(options.cw_len)
 cw_shift=int(options.cw_shift)
 
-#[cnn]
-cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
-cnn_len_filt=list(map(int, options.cnn_len_filt.split(',')))
-cnn_max_pool_len=list(map(int, options.cnn_max_pool_len.split(',')))
+#[cnn2D/1D]
+is_conv2D = options.is_conv2D
+conv_type = '2D' if is_conv2D else '1D'
+print("The file contains the config of a {} convolutional network.".format(conv_type))
+if is_conv2D:
+    #[cnn2D]
+    cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
+    cnn_len_filt_W=list(map(int, options.cnn_len_filt_W.split(',')))
+    cnn_len_filt_H=list(map(int, options.cnn_len_filt_H.split(',')))
+    cnn_energy_L=int(options.cnn_energy_L)
+    cnn_energy_stride=int(options.cnn_energy_stride)
+    cnn_max_pool_len_W=list(map(int, options.cnn_max_pool_len_W.split(',')))
+    cnn_max_pool_len_H=list(map(int, options.cnn_max_pool_len_H.split(',')))
+else:
+    #[cnn]
+    cnn_N_filt=list(map(int, options.cnn_N_filt.split(',')))
+    cnn_len_filt=list(map(int, options.cnn_len_filt.split(',')))
+    cnn_max_pool_len=list(map(int, options.cnn_max_pool_len.split(',')))
+
 cnn_use_laynorm_inp=str_to_bool(options.cnn_use_laynorm_inp)
 cnn_use_batchnorm_inp=str_to_bool(options.cnn_use_batchnorm_inp)
 cnn_use_laynorm=list(map(str_to_bool, options.cnn_use_laynorm.split(',')))
 cnn_use_batchnorm=list(map(str_to_bool, options.cnn_use_batchnorm.split(',')))
 cnn_act=list(map(str, options.cnn_act.split(',')))
 cnn_drop=list(map(float, options.cnn_drop.split(',')))
+
 
 
 #[dnn]
@@ -110,22 +129,41 @@ else:
 ## <!>------------------- Initializing the Networks with .cfg options -------------------<!> ##
 
 print("Initializing the Networks... \t\t", end="")
+
 # Feature extractor CNN
-CNN_arch = {'input_dim': wlen,
-          'fs': fs,
-          'cnn_N_filt': cnn_N_filt,
-          'cnn_len_filt': cnn_len_filt,
-          'cnn_max_pool_len':cnn_max_pool_len,
-          'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
-          'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
-          'cnn_use_laynorm':cnn_use_laynorm,
-          'cnn_use_batchnorm':cnn_use_batchnorm,
-          'cnn_act': cnn_act,
-          'cnn_drop':cnn_drop,          
-          }
+if is_conv2D:
+    CNN_arch = {'input_dim': wlen,
+            'fs': fs,
+            'cnn_N_filt': cnn_N_filt,
+            'cnn_len_filt_W': cnn_len_filt_W,
+            'cnn_len_filt_H': cnn_len_filt_H,
+            'cnn_energy_L': cnn_energy_L,
+            'cnn_energy_stride': cnn_energy_stride,
+            'cnn_max_pool_len_W': cnn_max_pool_len_W,
+            'cnn_max_pool_len_H': cnn_max_pool_len_H,
+            'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
+            'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
+            'cnn_use_laynorm':cnn_use_laynorm,
+            'cnn_use_batchnorm':cnn_use_batchnorm,
+            'cnn_act': cnn_act,
+            'cnn_drop':cnn_drop,          
+            }
+else:
+    CNN_arch = {'input_dim': wlen,
+            'fs': fs,
+            'cnn_N_filt': cnn_N_filt,
+            'cnn_len_filt': cnn_len_filt,
+            'cnn_max_pool_len':cnn_max_pool_len,
+            'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
+            'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
+            'cnn_use_laynorm':cnn_use_laynorm,
+            'cnn_use_batchnorm':cnn_use_batchnorm,
+            'cnn_act': cnn_act,
+            'cnn_drop':cnn_drop,          
+            }
 
 ## Initializes SincNet:
-CNN_net=CNN(CNN_arch)
+CNN_net=CNN2D(CNN_arch) if is_conv2D else CNN(CNN_arch)
 CNN_net.cuda()
 
 

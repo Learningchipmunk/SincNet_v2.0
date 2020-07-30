@@ -65,16 +65,34 @@ def read_conf():
     options.cw_len=Config.get('windowing', 'cw_len')
     options.cw_shift=Config.get('windowing', 'cw_shift')
 
-    #[cnn]
-    options.cnn_N_filt=Config.get('cnn', 'cnn_N_filt')
-    options.cnn_len_filt=Config.get('cnn', 'cnn_len_filt')
-    options.cnn_max_pool_len=Config.get('cnn', 'cnn_max_pool_len')
-    options.cnn_use_laynorm_inp=Config.get('cnn', 'cnn_use_laynorm_inp')
-    options.cnn_use_batchnorm_inp=Config.get('cnn', 'cnn_use_batchnorm_inp')
-    options.cnn_use_laynorm=Config.get('cnn', 'cnn_use_laynorm')
-    options.cnn_use_batchnorm=Config.get('cnn', 'cnn_use_batchnorm')
-    options.cnn_act=Config.get('cnn', 'cnn_act')
-    options.cnn_drop=Config.get('cnn', 'cnn_drop')
+    if('cnn2D' in Config.sections()):
+        #[cnn2D]
+        options.is_conv2D = True
+        options.cnn_N_filt=Config.get('cnn2D', 'cnn_N_filt')
+        options.cnn_len_filt_W=Config.get('cnn2D', 'cnn_len_filt_W')
+        options.cnn_len_filt_H=Config.get('cnn2D', 'cnn_len_filt_H')
+        options.cnn_energy_L=Config.get('cnn2D', 'cnn_energy_L')
+        options.cnn_energy_stride=Config.get('cnn2D', 'cnn_energy_stride')
+        options.cnn_max_pool_len_W=Config.get('cnn2D', 'cnn_max_pool_len_W')
+        options.cnn_max_pool_len_H=Config.get('cnn2D', 'cnn_max_pool_len_H')
+        options.cnn_use_laynorm_inp=Config.get('cnn2D', 'cnn_use_laynorm_inp')
+        options.cnn_use_batchnorm_inp=Config.get('cnn2D', 'cnn_use_batchnorm_inp')
+        options.cnn_use_laynorm=Config.get('cnn2D', 'cnn_use_laynorm')
+        options.cnn_use_batchnorm=Config.get('cnn2D', 'cnn_use_batchnorm')
+        options.cnn_act=Config.get('cnn2D', 'cnn_act')
+        options.cnn_drop=Config.get('cnn2D', 'cnn_drop')
+    else:
+        #[cnn]
+        options.is_conv2D = False
+        options.cnn_N_filt=Config.get('cnn', 'cnn_N_filt')
+        options.cnn_len_filt=Config.get('cnn', 'cnn_len_filt')
+        options.cnn_max_pool_len=Config.get('cnn', 'cnn_max_pool_len')
+        options.cnn_use_laynorm_inp=Config.get('cnn', 'cnn_use_laynorm_inp')
+        options.cnn_use_batchnorm_inp=Config.get('cnn', 'cnn_use_batchnorm_inp')
+        options.cnn_use_laynorm=Config.get('cnn', 'cnn_use_laynorm')
+        options.cnn_use_batchnorm=Config.get('cnn', 'cnn_use_batchnorm')
+        options.cnn_act=Config.get('cnn', 'cnn_act')
+        options.cnn_drop=Config.get('cnn', 'cnn_drop')
 
 
     #[dnn]
@@ -100,18 +118,21 @@ def read_conf():
     if('optimization' in Config.sections()):
         options.lr=Config.get('optimization', 'lr')
 
+        ## use_scheduler:
         if 'use_scheduler' in Config['optimization']:
             options.use_scheduler=Config.get('optimization', 'use_scheduler')
         else:
             print("You did not specify the value of `use_scheduler`, it is set to False.")
             options.use_scheduler='False'
 
+        ## scheduler_patience:
         if 'scheduler_patience' in Config['optimization']:
             options.scheduler_patience=Config.get('optimization', 'scheduler_patience')
         else:
             options.scheduler_patience=2
             print("You did not specify the value of `scheduler_patience`, it is set to {}.".format(options.scheduler_patience))
-            
+
+        ## scheduler_factor:
         if 'scheduler_factor' in Config['optimization']:
             options.scheduler_factor=Config.get('optimization', 'scheduler_factor')
         else:
@@ -120,12 +141,15 @@ def read_conf():
 
 
         options.batch_size=Config.get('optimization', 'batch_size')
+
+        ## Batch_dev:
         if 'Batch_dev' in Config['optimization']:
             options.Batch_dev=Config.get('optimization', 'Batch_dev')
         else:
             options.Batch_dev=32
             print("You did not specify the value of `Batch_dev`, it is set to {}.".format(options.Batch_dev))
 
+        ## patience:
         if 'patience' in Config['optimization']:
             options.patience=Config.get('optimization', 'patience')
         else:
@@ -136,41 +160,51 @@ def read_conf():
         options.N_batches=Config.get('optimization', 'N_batches')
         options.N_eval_epoch=Config.get('optimization', 'N_eval_epoch')
         
+        ## train_acc_period:
         if 'train_acc_period' in Config['optimization']:
                 options.train_acc_period=Config.get('optimization', 'train_acc_period')
         else:
             print("You did not specify the value of `train_acc_period`, it is set to 5.")
             options.train_acc_period=5
         
+        ## fact_amp:        
         if 'fact_amp' in Config['optimization']:
                 options.fact_amp=Config.get('optimization', 'fact_amp')
         else:
             options.fact_amp=0.2
             print("You did not specify the value of `fact_amp`, it is set to {}.".format(options.fact_amp))
-
+        
+        ## use_mixup:
         if 'use_mixup' in Config['optimization']:
             options.use_mixup=Config.get('optimization', 'use_mixup')
         else:
             print("You did not specify the value of `use_mixup`, it is set to False.")
             options.use_mixup='False'
         
+        ## mixup_batch_prop:        
         if 'mixup_batch_prop' in Config['optimization']:
             options.mixup_batch_prop=Config.get('optimization', 'mixup_batch_prop')
         else:
             options.mixup_batch_prop=float(1.0) if options.use_mixup=='True' else float(0.0)
             print("You did not specify the value of `mixup_batch_prop`, it is set to {}%.".format(options.mixup_batch_prop*100))
-
+        
+        ## beta_coef:
         if 'beta_coef' in Config['optimization']:
             options.beta_coef=Config.get('optimization', 'beta_coef')
         else:
             print("You did not specify the value of `beta_coef`, it is set to 0.4.")
             options.beta_coef=0.4
         
+        ## same_classes:        
         if 'same_classes' in Config['optimization']:
             options.same_classes=Config.get('optimization', 'same_classes')
         else:
-            print("You did not specify the value of `same_classes`, it is set to None.")
-            options.same_classes=None
+            options.same_classes='False'
+            print("You did not specify the value of `same_classes`, it is set to {}.".format(options.same_classes))
+            if("True" in options.use_mixup):
+                print("Warning: you are using mixup but you did not mention which type in config file. \n"+
+                    "By default it will be set to False. You are advised to add a same_class attribute to your cfg file and set it to True or False.")    
+
             
         options.seed=Config.get('optimization', 'seed')
     else:

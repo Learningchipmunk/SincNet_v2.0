@@ -388,7 +388,374 @@ class SincNet(nn.Module):
        return x
    
 
+import time
+import matplotlib.pyplot as plt
+import time
+
+## The main Network That is used by this Notebook to solve our speaker Recognition problem
+# This SincNet does not use anymore LayerNorm defined above bu Layernorm from pytorch: https://pytorch.org/docs/master/generated/torch.nn.LayerNorm.html
+class SincNet2D(nn.Module):
     
+    @staticmethod
+    def tensor_to_mel(tensor_hz):
+        return 2595 * (1 + tensor_hz / 700).log10()
+    
+    @staticmethod
+    def tensorLogScale(tensor):
+        # Constant that translates all values to 10^-3
+        eps = 1e-3
+    
+        # log(eps + pow):
+        return (eps + tensor).log10()
+    
+    @staticmethod
+    def PrintSpectrograms(specs, specType, fmax):
+    
+        N_audios = specs.size(0)
+        N_column = 4
+
+        fig, ax = plt.subplots(int(np.ceil(N_audios/N_column)), N_column, figsize=(14, 7),
+                              subplot_kw={'xticks': [], 'yticks': []})   
+
+        for i,spec in enumerate(specs):
+
+            ## Position in the axes grid:
+            axi, axj = int(i/N_column), i%N_column
+            
+            if spec.is_cuda:
+                spec = spec.cpu()
+            
+            # Here, we control the values of the ordinate and abscissa with the variable extent:
+            pos = ax[axi][axj].imshow(spec , origin='lower', cmap='jet', aspect='auto')
+            #ax[axi][axj].set_xlabel('Time frames')
+            #ax[axi][axj].set_ylabel('Frequency [Hz]')
+
+            # Plot colorbar
+            fig.colorbar(pos, ax=ax[axi][axj])
+        
+        # Places the spectrograms next to each other:
+        fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0, hspace=0)
+        
+        # Writes the title:
+        fig.suptitle("Image representation of a " + specType + " Spectrogram for each audio file:", fontsize=20, y=1.1)
+
+        plt.show()   
+
+    @staticmethod
+    def EnergyWindowMean(audios, N_filter = 80, L=300, stride=150, padding = False, removingZeros = False, debug_mode = False):
+
+        if debug_mode:
+            t1 = time.time()
+        
+        # First axe of audio is the time, second is the frequency band.
+        batch_size = audios.size(0)
+        N_filter   = audios.size(1)
+        N          = audios.size(2)
+
+        ## Just for display purposes, removes
+        if(debug_mode):print(N)
+            
+        ## Storing if the network is in cuda:
+        net_is_cuda = audios.is_cuda
+
+        ## Adds padding if it is requested:
+        if(padding):
+
+            if((N - L)%stride != 0):
+
+                ## Computing the new size with padding:
+                new_size = N + stride - (N - L)%stride
+
+                ## Padding in torch:
+                target = torch.zeros(batch_size, N_filter, new_size, dtype = torch.float)
+                
+                ## If cuda is used, we do too:
+                if net_is_cuda:
+                    target = target.cuda()
+                    
+                target[:, :, :N] = audios
+                audios = target
+
+            ## Computes the new length after padding 
+            N = audios.size(2)
+
+            if(debug_mode):print(N-L, N)
+
+        if debug_mode:
+            t2 = time.time() 
+            print("Temps de calcul pour le padding Energy : {}min".format( (t2-t1)/60 ))
+
+        ## <!>--------- Computes the enrgy Here ---------<!> ##
+
+        # Initializes the energy array
+        #np.array([sum([el*el for el in audios[i:i+L]])/L  for i in (0, (N - L), stride)])
+        Energy = torch.zeros(batch_size, N_filter, int((N-L)/stride) + 1, dtype = torch.float)
+        
+        ## If input is on cuda, we send the tensor to cuda:
+        if net_is_cuda:
+            Energy = Energy.cuda()
+        
+        
+        if debug_mode:
+            t3 = time.time() 
+            print("Temps de calcul pour créer le tenseur Energy : {}min".format( (t3-t2)/60 ))
+        
+        ## Computing the energy of the signal:
+        audios = audios.pow(2)
+        
+        
+        if debug_mode:
+            t4 = time.time() 
+            print("Temps de calcul pour multiplier les matrices : {}min".format( (t4-t3)/60 )) 
+
+        ## Very important +1 is needed for i to be equal to (N - L)!
+        for i in range(0, (N - L + 1), stride):
+            Energy[:, :, int(i/stride)] = audios[:, :, i:i+L].sum(dim=2)/L
+
+                
+        if debug_mode:
+            t5 = time.time() 
+            print("Temps de calcul pour le calcul de l'Energie : {}min".format( (t5-t4)/60 ))
+
+        ## <!>------------------- Done -------------------<!> ##
+
+        if(removingZeros):
+            ## Removing zeros from energy:
+            for i in range (len(Energy)-1, -1, -1):
+                if(Energy[i] > 0):
+                    Energy = Energy[:i+1]
+                    break
+
+        if(debug_mode):
+            print(len(Energy))
+
+            string_pad = "with padding" if padding else "without padding"
+
+            print("Expected length of the array " + string_pad + " : " + str(int((N-L)/stride) + 1))
+
+            t6 = time.time()
+            print("Temps de calcul pour le reste : {}min".format( (t6-t5)/60 ))
+                    
+        
+        return Energy
+    
+    def __init__(self,options, print_spec = False):
+        super(SincNet2D,self).__init__()
+
+        ## Plot parameters:
+        self.print_spec = print_spec
+
+        ## Parameters for convolutions:
+        self.cnn_N_filt         = options['cnn_N_filt']
+        self.cnn_len_filt_W     = options['cnn_len_filt_W']
+        self.cnn_len_filt_H     = options['cnn_len_filt_H']
+        self.cnn_max_pool_len_W = options['cnn_max_pool_len_W']
+        self.cnn_max_pool_len_H = options['cnn_max_pool_len_H']
+
+        # Parameters used in order to compute the enrgy:
+        self.cnn_energy_L      = options['cnn_energy_L']
+        self.cnn_energy_stride = options['cnn_energy_stride']
+
+        # Parameters for activation function and drop:
+        self.cnn_act  = options['cnn_act']
+        self.cnn_drop = options['cnn_drop']
+
+        # Parameters for normalization:
+        self.cnn_use_laynorm       = options['cnn_use_laynorm']
+        self.cnn_use_batchnorm     = options['cnn_use_batchnorm']
+        self.cnn_use_laynorm_inp   = options['cnn_use_laynorm_inp']
+        self.cnn_use_batchnorm_inp = options['cnn_use_batchnorm_inp']
+
+        # The size of the input:
+        self.input_dim=int(options['input_dim'])
+
+        # The sample rate:
+        self.fs=options['fs']
+
+        # Number of filters for each layer:
+        self.N_cnn_lay=len(options['cnn_N_filt'])
+
+        # Initialization of module lists:
+        self.conv  = nn.ModuleList([])
+        self.bn    = nn.ModuleList([])
+        self.ln    = nn.ModuleList([])
+        self.act   = nn.ModuleList([])
+        self.drop  = nn.ModuleList([])
+
+        # Input normalization layer:
+        if self.cnn_use_laynorm_inp:
+           self.ln0=nn.LayerNorm(self.input_dim)
+
+        if self.cnn_use_batchnorm_inp:
+           self.bn0=nn.BatchNorm1d([self.input_dim],momentum=0.05)
+
+        ## 2D init:
+        #Width and height of spectrograms for each layer:
+        spec_H   = int(self.cnn_N_filt[0])
+        spec_W   = int((self.input_dim -self.cnn_len_filt_W[0]+1)/self.cnn_max_pool_len_W[0])
+
+        for i in range(self.N_cnn_lay):
+         
+            N_filt=int(self.cnn_N_filt[i])
+        
+            #2D iter:
+            if i!=0:
+                spec_H   = int((spec_H - self.cnn_len_filt_H[i] + 1) / self.cnn_max_pool_len_H[i])
+                spec_W   = int((spec_W - self.cnn_len_filt_W[i]+1) / self.cnn_max_pool_len_W[i])
+                if self.print_spec:
+                    print(spec_H, spec_W)
+                 
+            # dropout
+            self.drop.append(nn.Dropout(p=self.cnn_drop[i]))
+
+            # activation
+            self.act.append(act_fun(self.cnn_act[i]))
+
+            if i ==0:
+                # layer norm initialization         
+                self.ln.append(nn.LayerNorm([N_filt, spec_W]))
+
+                self.bn.append(nn.BatchNorm1d(N_filt, momentum=0.05))
+            else:
+                # layer norm initialization         
+                self.ln.append(nn.LayerNorm([N_filt, spec_H, spec_W]))
+
+                self.bn.append(nn.BatchNorm2d(N_filt, momentum=0.05))
+
+            
+            
+            # N_filt = self.cnn_N_filt[i]
+            ## ! Very important uses SincConv_Fast as first layer(i==0)
+            if i==0:
+                self.conv.append(SincConv_fast(N_filt, self.cnn_len_filt_W[i], self.fs))
+              
+            elif i==1:
+                # Here Input channel size is one because we transitionned from a 3D tensor to a 4D tensor with one channel: (batch_size, Channel=1, Height, Width)
+                self.conv.append(nn.Conv2d(1, N_filt, kernel_size = (self.cnn_len_filt_H[i], self.cnn_len_filt_W[i])))
+            else:
+                self.conv.append(nn.Conv2d(self.cnn_N_filt[i-1], N_filt, kernel_size = (self.cnn_len_filt_H[i], self.cnn_len_filt_W[i]) ))
+         
+            # After the computation of the energy, the size changes to:
+            if i==0:
+                spec_W=int(np.ceil((spec_W-self.cnn_energy_L)/self.cnn_energy_stride + 1))
+                if self.print_spec: 
+                    print(spec_H, spec_W)
+
+
+        ## output dimension of the network is computed dynamically
+        self.out_dim=N_filt*spec_H*spec_W
+
+
+
+    def forward(self, x):
+        batch=x.shape[0]
+        seq_len=x.shape[1]
+
+        if bool(self.cnn_use_laynorm_inp):
+            
+            if self.print_spec:
+                t1 = time.time()
+            
+            x=self.ln0((x))
+                        
+            if self.print_spec:
+                t2 = time.time() 
+                print("Temps de calcul pour la inp layernorm : {}min".format( (t2-t1)/60 ))
+            
+
+        if bool(self.cnn_use_batchnorm_inp):
+            x=self.bn0((x))
+
+        x=x.view(batch,1,seq_len)
+
+       
+        for i in range(self.N_cnn_lay):
+            
+            # Taking time of conv:    
+            if self.print_spec:
+                t1 = time.time()
+            
+            # Conv:
+            x = self.conv[i](x)
+            
+            if self.print_spec:
+                t2 = time.time() 
+                print("Temps de calcul pour la conv : {}min".format( (t2-t1)/60 ))
+            
+            if self.cnn_use_laynorm[i] and i==0:
+                ## Every layer in one line, changes beacause of the torch.abs:
+                x = self.drop[i](self.act[i](self.ln[i](F.max_pool1d(torch.abs(x), self.cnn_max_pool_len_W[i])))) 
+            
+            else:
+                # Max pooling:
+                if i==0:
+                    x = F.max_pool1d(x, kernel_size = self.cnn_max_pool_len_W[i])
+                else:
+                    x = F.max_pool2d(x, kernel_size = (self.cnn_max_pool_len_H[i], self.cnn_max_pool_len_W[i]))
+                
+                if self.print_spec:
+                    t3 = time.time() 
+                    print("Temps de calcul pour maxpool : {}min".format( (t3-t2)/60 ))
+                
+                # Layer normalization:
+                if self.cnn_use_laynorm[i]:
+                    x = self.ln[i](x)
+                # Batch norm:
+                elif self.cnn_use_batchnorm[i]:
+                    x = self.bn[i](x)
+                
+                if self.print_spec:
+                    t4 = time.time() 
+                    print("Temps de calcul pour batchnorm : {}min".format( (t4-t3)/60 ))
+                
+                # activation function:                               
+                x = self.act[i](x)
+                
+                if self.print_spec:
+                    t5 = time.time() 
+                    print("Temps de calcul pour la conv : {}min".format( (t5-t4)/60 ))
+                
+                # Dropout layer:                              
+                x = self.drop[i](x)    
+                
+                if self.print_spec:
+                    t6 = time.time() 
+                    print("Temps de calcul pour la conv : {}min".format( (t6-t5)/60 ))
+                                               
+            if i == 0:
+                #x = self.EnergyWindowMean(x, N_filter = self.cnn_N_filt[0], L=self.cnn_energy_L, stride=self.cnn_energy_stride, 
+                 #                       padding = True, removingZeros = False, debug_mode = self.print_spec)
+                
+                # Taking time of Energy computation:
+                if self.print_spec:
+                    t1 = time.time()
+                
+                N = x.size(2)
+                to_pad = self.cnn_energy_stride - (N - self.cnn_energy_L)%self.cnn_energy_stride
+                #print(to_pad)
+                to_pad /= 2
+                to_pad = int(to_pad)
+            
+                # Conv:
+                x = x.pow(2)
+                x = F.avg_pool1d(x, kernel_size=self.cnn_energy_L, stride=self.cnn_energy_stride, padding=to_pad)
+                
+                if self.print_spec:
+                    t2 = time.time() 
+                    print("Temps de calcul pour l'Energie : {}min".format( (t2-t1)/60 ))
+                
+                x = self.tensorLogScale(x)
+                if self.print_spec:
+                    self.PrintSpectrograms(x, "Log", self.fs)
+                x = x.view(batch, 1, self.cnn_N_filt[i], -1)
+
+            if self.print_spec:
+                print(x.shape)
+
+       
+        x = x.view(batch,-1)
+
+        return x
 
     
 ## MLP Generic Class
