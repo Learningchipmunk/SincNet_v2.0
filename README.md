@@ -38,8 +38,8 @@ conda activate SincNet
 - Within conda environment, Install the libraries
 
 ```bash
-conda install -n $envname -y jupyter pandas matplotlib seaborn nbformat
-conda install -n $envname -y librosa prettytable jupyterlab pysoundfile tqdm -c conda-forge
+conda install -y jupyter pandas matplotlib seaborn nbformat
+conda install -y librosa prettytable jupyterlab pysoundfile tqdm -c conda-forge
 ```
 
 * Within conda environment, pip Install those libraries too
@@ -64,20 +64,88 @@ Those packages are compatible with pytorch 1.1.0
   conda install pytorch==1.1.0 torchvision==0.3.0 cpuonly -c pytorch
   ```
 
-### Test installation
+## How to Setup SincNet for Experimentation:
 
-When you finish the installation you can test it by executing the following commands:
+### Fetch Data
+
+[TODO]
+
+Here I should write how to fetch the data and where to put them.
+
+### Preprocessing
+
+[TODO]
+
+Here I should write how to use the preprocessing notebook to preprocess kaggle data.
+
+[For jupyter notebook, add pictures !]
+
+#### Training Set
+
+
+
+#### Testing Set
+
+
+
+### Setup the Configuration File
+
+In SincNet, the configuration files are usually in the cfg directory, they are recognizable by their file format `.cfg`.
+
+- Modify the *[data]* section of *cfg/test.cfg* file according to your paths. In particular, modify the *data_folder* with the location of the preprocessed data that you created following the tutorial above. The other parameters of the config file belong to the following sections:
+
+1. *[windowing]*, that defines how each sentence is split into smaller chunks.
+2. *[cnn]*, that specifies the characteristics of the CNN architecture.
+3. *[dnn]*, that specifies the characteristics of the fully-connected DNN architecture following the CNN layers.
+4. *[class]*, that specify the logsoftmax classification part.
+5. *[optimization]*, that reports the main hyperparameters used to train the architecture.
+
+* Once you setup the cfg file, you can attempt to train your model. See [Training and Testing Models.](### Training and Testing Models)
+
+### Training and Testing Models
+
+#### Training a Model
+
+To train a model, you must run the python script `main.py`.
+
+`main.py` has three options:
+
+- `-cfg|--configPath` with this option, you indicate the path of the configuration file you would like to use
+
+* `-fn|--FileName` if this option has a value set, the saved models will be named after this value
+* `-c|--cuda` if this option is set, the pytorch code will run with the Cuda device you specified. It defaults to -1, meaning that the CPU is chosen
+
+To train a model with `test.cfg` on device `cuda:0`, execute the following command:
 
 ```bash
-conda activate SincNet
-python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_normalSincNet --cuda=1
+python main.py --configPath=cfg/test.cfg --cuda=0
 ```
+
+#### Testing a model
+
+To test a model, you must run the python script `Test_Model.py`.
+
+>  `Test_Model.py` has the same options as `main.py`. ([See above](### Training a Model).)
+
+> In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of your `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#### Testing Set) section!
+
+To test your previously trained model `test.cfg` on device `cuda:0`, execute the following command:
+
+```bash
+python Test_Model.py --configPath=cfg/test.cfg --cuda=0
+```
+
+
 
 ## Utilities
 
-##### Path for trained models
+##### Path for the trained models
 
 They are on the yd-4q2twm2 machine @ /home/nlpt4239/SincNet_DCASE_v2.0/exp/SincNet_DCASE_v2.0
+
+##### Results of the trained models
+
+You can find the most relevant results of previous training [here](https://gitlab.tech.orange/golden-ear-for-things/nn-acoustic-feature-extraction/test).
 
 
 ##### Tutors
