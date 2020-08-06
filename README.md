@@ -98,7 +98,7 @@ In this notebook, you should replace the values of the variables `dir_audio_trai
 
 Afterward, execute everything before **Preprocessing train audio on Energy** in the notebook. Then proceed to change the values of the variables and the folder's  location to your liking.
 
-![Replace values here](Images/Readme.md_Image/Pre_Image2.PNG)
+![Replace values here](Images/Readme.md_Images/Pre_Image2.PNG)
 
 In our tests, we preprocessed with those values:
 
