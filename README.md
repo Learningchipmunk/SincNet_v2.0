@@ -112,7 +112,7 @@ In our tests, we preprocessed with those values:
 
 Just below the Training Set preprocessing you have the **Preprocessing test audio on Energy** section that does the same to the test dataset!
 
-> :warning: **Remark**: We recommend you having the same settings for testing and training data preprocessing. :warning:
+> :warning: **Remark**: We recommend having the same settings for testing and training data preprocessing. :warning:
 
 ### Setup the Configuration File
 
