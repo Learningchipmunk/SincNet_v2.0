@@ -92,13 +92,13 @@ The preprocessing is done in the notebook `Pre-processing_audio_files_to_Tensors
 
 In this notebook, you should replace the values of the variables `dir_audio_train` and `dir_audio_test` with the paths of the Train and Test data that you fetched before hand. 
 
-![Replace values here](Images/Readme.md_Images/Pre_Image1.PNG)
+![Replace values here](Readme.md_Images/Pre_Image1.PNG)
 
 #### Training Set
 
 Afterward, execute everything before **Preprocessing train audio on Energy** in the notebook. Then proceed to change the values of the variables and the folder's  location to your liking.
 
-![Replace values here](Images/Readme.md_Image/Pre_Image2.PNG)
+![Replace values here](Readme.md_Image/Pre_Image2.PNG)
 
 In our tests, we preprocessed with those values:
 
