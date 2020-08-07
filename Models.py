@@ -286,13 +286,13 @@ class sinc_conv(nn.Module):
 
 ## The main Network That is used by this Notebook to solve our speaker Recognition problem
 class SincNet(nn.Module):
-    
     def __init__(self,options):
        super(SincNet,self).__init__()
     
        self.cnn_N_filt=options['cnn_N_filt']
        self.cnn_len_filt=options['cnn_len_filt']
        self.cnn_max_pool_len=options['cnn_max_pool_len']
+       self.use_SincConv_fast=options['use_SincConv_fast']
        
        
        self.cnn_act=options['cnn_act']
@@ -307,12 +307,12 @@ class SincNet(nn.Module):
        
        self.fs=options['fs']
        
-       self.N_cnn_lay=len(options['cnn_N_filt'])
-       self.conv  = nn.ModuleList([])
-       self.bn  = nn.ModuleList([])
-       self.ln  = nn.ModuleList([])
-       self.act = nn.ModuleList([])
-       self.drop = nn.ModuleList([])
+       self.N_cnn_lay = len(options['cnn_N_filt'])
+       self.conv      = nn.ModuleList([])
+       self.bn        = nn.ModuleList([])
+       self.ln        = nn.ModuleList([])
+       self.act       = nn.ModuleList([])
+       self.drop      = nn.ModuleList([])
        
              
        if self.cnn_use_laynorm_inp:
@@ -342,8 +342,10 @@ class SincNet(nn.Module):
 
          ## ! Very important uses SincConv_Fast as first layer(i==0)
          if i==0:
-          self.conv.append(SincConv_fast(self.cnn_N_filt[0],self.cnn_len_filt[0],self.fs))
-              
+          if self.use_SincConv_fast:
+           self.conv.append(SincConv_fast(self.cnn_N_filt[i],self.cnn_len_filt[i],self.fs))
+          else:
+           self.conv.append(nn.Conv1d(1, self.cnn_N_filt[i], self.cnn_len_filt[i]))   
          else:
           self.conv.append(nn.Conv1d(self.cnn_N_filt[i-1], self.cnn_N_filt[i], self.cnn_len_filt[i]))
          
@@ -388,14 +390,21 @@ class SincNet(nn.Module):
        return x
    
 
+## Imports used by SincNet2D:
 import time
 import matplotlib.pyplot as plt
 import time
 
-## The main Network That is used by this Notebook to solve our speaker Recognition problem
 # This SincNet does not use anymore LayerNorm defined above bu Layernorm from pytorch: https://pytorch.org/docs/master/generated/torch.nn.LayerNorm.html
 class SincNet2D(nn.Module):
-    
+    """Modified version of SincNet. 
+    Uses Sinc-based convolution defined in SincConv_fast for the first layer of the CNN,
+    then uses conv2d and maxpool2d for the rest of the layers of the CNN.
+
+    Args:
+        options (dict):    Takes as argument for initialization a dictionary named options.
+        print_spec (bool): Second argument is a boolean that indicates if user wishes to print the spectrograms. Defaults to False.
+    """
     @staticmethod
     def tensor_to_mel(tensor_hz):
         return 2595 * (1 + tensor_hz / 700).log10()
@@ -409,7 +418,7 @@ class SincNet2D(nn.Module):
         return (eps + tensor).log10()
     
     @staticmethod
-    def PrintSpectrograms(specs, specType, fmax):
+    def PrintSpectrograms(specs, specType):
     
         N_audios = specs.size(0)
         N_column = 4
@@ -422,11 +431,12 @@ class SincNet2D(nn.Module):
             ## Position in the axes grid:
             axi, axj = int(i/N_column), i%N_column
             
+            ## imshow only works on CPU tensors:
             if spec.is_cuda:
                 spec = spec.cpu()
             
             # Here, we control the values of the ordinate and abscissa with the variable extent:
-            pos = ax[axi][axj].imshow(spec , origin='lower', cmap='jet', aspect='auto')
+            pos = ax[axi][axj].imshow(spec, origin='lower', cmap='jet', aspect='auto')
             #ax[axi][axj].set_xlabel('Time frames')
             #ax[axi][axj].set_ylabel('Frequency [Hz]')
 
@@ -551,6 +561,7 @@ class SincNet2D(nn.Module):
         self.cnn_len_filt_H     = options['cnn_len_filt_H']
         self.cnn_max_pool_len_W = options['cnn_max_pool_len_W']
         self.cnn_max_pool_len_H = options['cnn_max_pool_len_H']
+        self.use_SincConv_fast  = options['use_SincConv_fast']
 
         # Parameters used in order to compute the enrgy:
         self.cnn_energy_L      = options['cnn_energy_L']
@@ -610,36 +621,41 @@ class SincNet2D(nn.Module):
 
             # activation
             self.act.append(act_fun(self.cnn_act[i]))
-
-            if i ==0:
-                # layer norm initialization         
-                self.ln.append(nn.LayerNorm([N_filt, spec_W]))
-
-                self.bn.append(nn.BatchNorm1d(N_filt, momentum=0.05))
-            else:
-                # layer norm initialization         
-                self.ln.append(nn.LayerNorm([N_filt, spec_H, spec_W]))
-
-                self.bn.append(nn.BatchNorm2d(N_filt, momentum=0.05))
-
             
             
             # N_filt = self.cnn_N_filt[i]
             ## ! Very important uses SincConv_Fast as first layer(i==0)
             if i==0:
-                self.conv.append(SincConv_fast(N_filt, self.cnn_len_filt_W[i], self.fs))
+                if self.use_SincConv_fast:
+                    self.conv.append(SincConv_fast(N_filt, self.cnn_len_filt_W[i], self.fs))
+                else:
+                    self.conv.append(nn.Conv1d(1, self.cnn_N_filt[i], self.cnn_len_filt[i]))
+                    
+                # After the computation of the energy, the size changes to:
+                spec_W=int(np.ceil((spec_W-self.cnn_energy_L)/self.cnn_energy_stride + 1))
+                if self.print_spec: 
+                    print(spec_H, spec_W)
               
             elif i==1:
                 # Here Input channel size is one because we transitionned from a 3D tensor to a 4D tensor with one channel: (batch_size, Channel=1, Height, Width)
                 self.conv.append(nn.Conv2d(1, N_filt, kernel_size = (self.cnn_len_filt_H[i], self.cnn_len_filt_W[i])))
             else:
                 self.conv.append(nn.Conv2d(self.cnn_N_filt[i-1], N_filt, kernel_size = (self.cnn_len_filt_H[i], self.cnn_len_filt_W[i]) ))
-         
-            # After the computation of the energy, the size changes to:
+
+            # layer norm initialization
             if i==0:
-                spec_W=int(np.ceil((spec_W-self.cnn_energy_L)/self.cnn_energy_stride + 1))
-                if self.print_spec: 
-                    print(spec_H, spec_W)
+                self.ln.append(nn.LayerNorm([1, spec_H, spec_W]))
+            else:
+                self.ln.append(nn.LayerNorm([N_filt, spec_H, spec_W]))
+
+            # Batchnorm initialization
+            if i==0:
+                self.bn.append(nn.BatchNorm2d(1, momentum=0.05))
+            else:
+                self.bn.append(nn.BatchNorm2d(N_filt, momentum=0.05))
+
+         
+
 
 
         ## output dimension of the network is computed dynamically
@@ -682,72 +698,75 @@ class SincNet2D(nn.Module):
                 t2 = time.time() 
                 print("Temps de calcul pour la conv : {}min".format( (t2-t1)/60 ))
             
+            ## Changes beacause of the torch.abs, I don't know why:
             if self.cnn_use_laynorm[i] and i==0:
-                ## Every layer in one line, changes beacause of the torch.abs:
-                x = self.drop[i](self.act[i](self.ln[i](F.max_pool1d(torch.abs(x), self.cnn_max_pool_len_W[i])))) 
+                x = torch.abs(x)
             
+            # Max pooling:
+            if i==0:
+                x = F.max_pool1d(x, kernel_size = self.cnn_max_pool_len_W[i])
             else:
-                # Max pooling:
-                if i==0:
-                    x = F.max_pool1d(x, kernel_size = self.cnn_max_pool_len_W[i])
-                else:
-                    x = F.max_pool2d(x, kernel_size = (self.cnn_max_pool_len_H[i], self.cnn_max_pool_len_W[i]))
-                
-                if self.print_spec:
-                    t3 = time.time() 
-                    print("Temps de calcul pour maxpool : {}min".format( (t3-t2)/60 ))
-                
-                # Layer normalization:
-                if self.cnn_use_laynorm[i]:
-                    x = self.ln[i](x)
-                # Batch norm:
-                elif self.cnn_use_batchnorm[i]:
-                    x = self.bn[i](x)
-                
-                if self.print_spec:
-                    t4 = time.time() 
-                    print("Temps de calcul pour batchnorm : {}min".format( (t4-t3)/60 ))
-                
-                # activation function:                               
-                x = self.act[i](x)
-                
-                if self.print_spec:
-                    t5 = time.time() 
-                    print("Temps de calcul pour la conv : {}min".format( (t5-t4)/60 ))
-                
-                # Dropout layer:                              
-                x = self.drop[i](x)    
-                
-                if self.print_spec:
-                    t6 = time.time() 
-                    print("Temps de calcul pour la conv : {}min".format( (t6-t5)/60 ))
-                                               
+                x = F.max_pool2d(x, kernel_size = (self.cnn_max_pool_len_H[i], self.cnn_max_pool_len_W[i]))
+            
+            if self.print_spec:
+                t3 = time.time() 
+                print("Temps de calcul pour maxpool : {}min".format( (t3-t2)/60 ))
+            
+            # Compute Energy with average pooling:                     
             if i == 0:
+                ## Old method, too slow:
                 #x = self.EnergyWindowMean(x, N_filter = self.cnn_N_filt[0], L=self.cnn_energy_L, stride=self.cnn_energy_stride, 
-                 #                       padding = True, removingZeros = False, debug_mode = self.print_spec)
+                #                        padding = True, removingZeros = False, debug_mode = self.print_spec)
                 
                 # Taking time of Energy computation:
                 if self.print_spec:
-                    t1 = time.time()
+                    t3 = time.time()
                 
+                ## Computing how much zeros we need to add:
                 N = x.size(2)
                 to_pad = self.cnn_energy_stride - (N - self.cnn_energy_L)%self.cnn_energy_stride
                 #print(to_pad)
                 to_pad /= 2
                 to_pad = int(to_pad)
             
-                # Conv:
+                # Computing Energy:
                 x = x.pow(2)
                 x = F.avg_pool1d(x, kernel_size=self.cnn_energy_L, stride=self.cnn_energy_stride, padding=to_pad)
                 
                 if self.print_spec:
-                    t2 = time.time() 
-                    print("Temps de calcul pour l'Energie : {}min".format( (t2-t1)/60 ))
+                    t4 = time.time() 
+                    print("Temps de calcul pour l'Energie : {}min".format( (t4-t3)/60 ))
                 
                 x = self.tensorLogScale(x)
                 if self.print_spec:
-                    self.PrintSpectrograms(x, "Log", self.fs)
+                    self.PrintSpectrograms(x, "Log")
                 x = x.view(batch, 1, self.cnn_N_filt[i], -1)
+
+
+            # Layer normalization:
+            if self.cnn_use_laynorm[i]:
+                x = self.ln[i](x)
+            # Batch norm:
+            elif self.cnn_use_batchnorm[i]:
+                x = self.bn[i](x)
+            
+            if self.print_spec:
+                t5 = time.time() 
+                print("Temps de calcul pour batchnorm : {}min".format( (t5-t4)/60 ))
+            
+            # activation function:                               
+            x = self.act[i](x)
+            
+            if self.print_spec:
+                t6 = time.time() 
+                print("Temps de calcul pour la fonction d'activation : {}min".format( (t6-t5)/60 ))
+            
+            # Dropout layer:                              
+            x = self.drop[i](x)    
+            
+            if self.print_spec:
+                t7 = time.time() 
+                print("Temps de calcul pour la fonction Drop : {}min".format( (t7-t6)/60 ))
 
             if self.print_spec:
                 print(x.shape)
