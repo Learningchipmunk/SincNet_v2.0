@@ -24,10 +24,27 @@ python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_Rand0Pre_WithEnergy_
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_DNN1024_Rand0PreEnergy4000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler0.2_Window800ms_PReLu_Drop30_Notebook --cuda=1
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_Notebook --cuda=0
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_Energy600_Notebook --cuda=1
+Old versions:
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_FreezeSincNet --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_normalSincNet --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_1DConvOnly_PReLu_Drop30.cfg --cuda=1
+
+2D version:
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4000_16kHz_Scheduler_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_16kHz_Scheduler_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_16kHz_DNN256_FirstMaxpoolW1_Scheduler_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow3000_ModifCNN_Scheduler_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy5000ms_DNN256_32kHz_Energy2048_batchsize16_Scheduler_Window4000ms_Drop30_Notebook --cuda=1
 """
 import numpy as np
 import torch
 import torch.nn as nn
+import os.path
 
 ## Local files imports:
 from Models import MLP, flip, MainNet
@@ -37,6 +54,7 @@ from read_conf_files import read_conf, str_to_bool
 from utils import Dataset, LoadPrevModel #,Dataset2
 from training_and_acc_fun import accuracy
 #from old_acc_fun import accuracy as old_accuracy
+
 
 ## <!>---------------------------- Reading the config file ----------------------------<!> ##
 # Reading cfg file
@@ -78,8 +96,6 @@ cnn_use_batchnorm=list(map(str_to_bool, options.cnn_use_batchnorm.split(',')))
 cnn_act=list(map(str, options.cnn_act.split(',')))
 cnn_drop=list(map(float, options.cnn_drop.split(',')))
 
-
-
 #[dnn]
 fc_lay=list(map(int, options.fc_lay.split(',')))
 fc_drop=list(map(float, options.fc_drop.split(',')))
@@ -102,6 +118,10 @@ class_act=list(map(str, options.class_act.split(',')))
 Batch_dev=int(options.Batch_dev)
 N_eval_epoch=int(options.N_eval_epoch)
 
+#[Misc]
+use_SincConv_fast = str_to_bool(options.use_SincConv_fast)
+
+
 # Converting context and shift in samples
 wlen=int(fs*cw_len/1000.00)
 wshift=int(fs*cw_shift/1000.00)
@@ -114,7 +134,11 @@ cost = nn.NLLLoss()
 print("Selecting Cuda device... \t\t", end="")
 Desired_cuda_device_number = int(options.cuda)
 
-if torch.cuda.is_available(): # we'll use cuda
+if(Desired_cuda_device_number == -1):
+    device = "cpu"
+    torch.cuda.set_device(device)
+    print("CPU was selected successfully!")
+elif torch.cuda.is_available(): # we'll use cuda
     device = "cuda:"+str(Desired_cuda_device_number)
     torch.cuda.set_device(device)
     if(torch.cuda.current_device() == Desired_cuda_device_number and torch.cuda.is_available()):
@@ -122,7 +146,9 @@ if torch.cuda.is_available(): # we'll use cuda
     else:
         print("Cuda was not selected successfully...")
 else:
-    print("Cuda device(s) is(are) not available.")
+    device = "cpu"
+    torch.cuda.set_device(device)
+    print("Cuda device(s) is(are) not available... \t We selected CPU instead!")
 
 
 
@@ -146,7 +172,8 @@ if is_conv2D:
             'cnn_use_laynorm':cnn_use_laynorm,
             'cnn_use_batchnorm':cnn_use_batchnorm,
             'cnn_act': cnn_act,
-            'cnn_drop':cnn_drop,          
+            'cnn_drop':cnn_drop,
+            'use_SincConv_fast': use_SincConv_fast,          
             }
 else:
     CNN_arch = {'input_dim': wlen,
@@ -159,7 +186,8 @@ else:
             'cnn_use_laynorm':cnn_use_laynorm,
             'cnn_use_batchnorm':cnn_use_batchnorm,
             'cnn_act': cnn_act,
-            'cnn_drop':cnn_drop,          
+            'cnn_drop':cnn_drop,
+            'use_SincConv_fast': use_SincConv_fast,                      
             }
 
 ## Initializes SincNet:
@@ -211,10 +239,51 @@ testTensorFiles = np.load("data_lists/Tensor_Test_list.npy")
 # Stores the Number of files:
 snt_te=len(testTensorFiles)
 
-if("800" in options.configPath or "1000" in options.configPath):
-    data_folder_test = "Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window1000ms/"
+## -- Fetching Test Data path: -- ##
+# Stores the path to the test data:
+data_folder_test = ""
+
+# Checks if user specified a path:
+if options.TestDataPath == 'None':
+    data_folder_test = "Data/Audio_Tensors/Test/"
+    if 16000 == fs:
+        if "5000" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window5000ms_16kHz_Random0Padding/"
+        
+        elif"4000" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window4000ms_16kHz_Random0Padding/"
+    
+    elif 32000 == fs:
+        if(800 <= cw_len <= 1000 and "Random0Padding" in  options.data_folder):
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz_Random0Padding/"
+        
+        ## At the beginning we used Deterministic padding
+        elif (800 <= cw_len <= 1000):
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz/"            
+        
+        elif "4000" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window4000ms_32kHz_Random0Padding/"
+
+        elif "4400" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window4400ms_32kHz_Random0Padding/"
+
+        elif "5000" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window5000ms_32kHz_Random0Padding/"
+
 else:
-    data_folder_test = "Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window4000ms_Random0Padding/"
+    data_folder_test = options.TestPath
+
+# Checks if path was modified, if not there is a problem!
+if data_folder_test == "Data/Audio_Tensors/Test/":
+    print("Error: we did not find a matching test dataset for your configuration file!")
+    exit()
+
+# Checks if the directory exists on drive:
+if not os.path.isdir(data_folder_test):
+    print("Error: we did not find the directory of the test tensors! Check if you have the right path.")
+    exit()
+
+## -- end of Fetching Test Data path -- ##
 
 lab_dict = np.load("data_lists/DCASE_tensor_test_labels.npy").item()
 print("Done!")
@@ -232,7 +301,7 @@ print("Done!")
 
 # test.cfg
 ## Parameters that needs to change each execution:
-model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
+model_file_name       = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 if(options.FileName != 'None'):
     model_file_name = options.FileName
 
@@ -252,6 +321,8 @@ if(sincnet_version == 1):
     previous_model_path = "../SincNet_DCASE/" + previous_model_path
 
 
+# Annoncing the path of the data taken for the test:
+print("Loaded the data from {}!".format(data_folder_test))
 
 ## Loading previously trained model if needed:
 #Function was modified especially for .py folders:

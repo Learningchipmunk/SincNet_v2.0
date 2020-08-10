@@ -192,6 +192,7 @@ To train a model, you must run the python script `main.py`.
 - `-cfg|--configPath` with this option, you indicate the path of the configuration file you would like to use
 
 * `-fn|--FileName` if this option has a value set, the saved models will be named after this value
+* `-tdp|--TestDataPath` if this option has a value set, the path of the saved test tensor files will be set after this value ***(usefull for testing a model)***
 * `-c|--cuda` if this option is set, the pytorch code will run with the Cuda device you specified. It defaults to -1, meaning that the CPU is chosen
 
 To train a model with `test.cfg` on device `cuda:0`, execute the following command:
@@ -200,18 +201,20 @@ To train a model with `test.cfg` on device `cuda:0`, execute the following comma
 python main.py --configPath=cfg/test.cfg --cuda=0
 ```
 
-#### Testing a model
+#### Testing a Model
 
 To test a model, you must run the python script `Test_Model.py`.
 
->  `Test_Model.py` has the same options as `main.py`. ([See above](### Training a Model).)
+* `Test_Model.py` has the same options as `main.py`. ([See above](### Training a Model).)
 
-> In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#### Testing Set) section!
+* In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#### Testing Set) section!
 
-To test your previously trained model `test.cfg` on device `cuda:0`, execute the following command:
+  * > :warning: **Remark**: If you are using DCASE data and you **did not** re-create your own datalists, you can use ours by keeping the values of `testTensorFiles` and `lab_dict` unchanged. :warning:
+
+To test your previously trained model `test.cfg` on test data `insert_path_here` using the device `cuda:0`, execute the following command:
 
 ```bash
-python Test_Model.py --configPath=cfg/test.cfg --cuda=0
+python Test_Model.py --configPath=cfg/test.cfg --TestDataPath=insert_path_here/ --cuda=0
 ```
 
 
