@@ -40,9 +40,11 @@ def read_conf():
     parser.add_argument('--configPath', metavar='-cfg', type=str,
                     help='The path of the configuration file. \n\t ex: cfg/SincNet_DCASE_Preprocessing_WithEnergy_Window_800.cfg')
     parser.add_argument('--FileName', metavar='-fn', type=str, default='None',
-                        help='Indicates the name if the saving/loading file.')
-    parser.add_argument('--cuda', metavar='-c', type=int,
-                        help='Indicates the graphic Card you wish to use!')
+                        help='Indicates the name of the saved/loaded file.')
+    parser.add_argument('--TestDataPath', metavar='-tdp', type=str, default='None',
+                        help='Indicates the path of the saved test tensor files.')
+    parser.add_argument('--cuda', metavar='-c', type=int, default=-1,
+                        help='Indicates the number of the Cuda Device(Graphic Card) you wish to use! -1 Means CPU.')
 
     # Reads the arguments the user wrote on the command line:
     options = parser.parse_args()
@@ -209,5 +211,17 @@ def read_conf():
         options.seed=Config.get('optimization', 'seed')
     else:
         print("Error, you did not specify optimization parameters in your cfg. Consequently, the code won't run...")
+
+    #[Misc]
+    ## In SincNet, we must always use SincConv_fast, it is the whole point of SincNet. But, just for testing, we added the possibility to deactivate it. 
+    ## This is why we do not prompt the user if he does not have a `Misc`section.
+    options.use_SincConv_fast='True'
+    if('Misc' in Config.sections()):
+        ## use_SincConv_fast:        
+        if 'use_SincConv_fast' in Config['Misc']:
+            options.use_SincConv_fast=Config.get('Misc', 'use_SincConv_fast')
+        else:
+            print("You did not specify the value of `use_SincConv_fast`, but don't worry, it is set to {}.".format(options.use_SincConv_fast))
+        
 
     return options
