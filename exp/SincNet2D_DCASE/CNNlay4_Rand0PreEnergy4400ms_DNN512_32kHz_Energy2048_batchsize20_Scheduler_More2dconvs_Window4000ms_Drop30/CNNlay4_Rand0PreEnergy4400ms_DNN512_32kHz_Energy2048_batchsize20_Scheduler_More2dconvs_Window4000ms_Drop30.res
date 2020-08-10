@@ -6,3 +6,12 @@ epoch 25, running_loss_tr=1.143954 running_acc_tr=0.656990 best_class_acc_te=0.6
 epoch 30, running_loss_tr=0.948772 running_acc_tr=0.736099 best_class_acc_te=0.661214 loss_te=1.466883 window_acc_te=0.629781 
 epoch 35, running_loss_tr=0.821423 running_acc_tr=0.712752 best_class_acc_te=0.646438 loss_te=1.646487 window_acc_te=0.611976 
 epoch 40, running_loss_tr=0.895321 running_acc_tr=0.717941 best_class_acc_te=0.665435 loss_te=1.418832 window_acc_te=0.630539 
+epoch 45, running_loss_tr=0.825759 running_acc_tr=0.717871 best_class_acc_te=0.598945 loss_te=1.734679 window_acc_te=0.569609 
+epoch 50, running_loss_tr=1.134799 running_acc_tr=0.692219 best_class_acc_te=0.707124 loss_te=1.376872 window_acc_te=0.659166 
+epoch 55, running_loss_tr=0.857496 running_acc_tr=0.745232 best_class_acc_te=0.671240 loss_te=1.596037 window_acc_te=0.636604 
+epoch 60, running_loss_tr=0.585091 running_acc_tr=0.809026 best_class_acc_te=0.623747 loss_te=1.635138 window_acc_te=0.595141 
+epoch 65, running_loss_tr=0.569429 running_acc_tr=0.797264 best_class_acc_te=0.659103 loss_te=1.632828 window_acc_te=0.632508 
+epoch 70, running_loss_tr=0.516410 running_acc_tr=0.807552 best_class_acc_te=0.706596 loss_te=1.434477 window_acc_te=0.662678 
+epoch 75, running_loss_tr=0.678616 running_acc_tr=0.804096 best_class_acc_te=0.721900 loss_te=1.398056 window_acc_te=0.679595 
+epoch 80, running_loss_tr=0.334156 running_acc_tr=0.884302 best_class_acc_te=0.711873 loss_te=1.456650 window_acc_te=0.675374 
+epoch 85, running_loss_tr=0.289921 running_acc_tr=0.861130 best_class_acc_te=0.730871 loss_te=1.398332 window_acc_te=0.690868 

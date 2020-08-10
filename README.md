@@ -1,6 +1,10 @@
 # SincNet v2.0 for DCASE:
 
-This is the Version of SincNet with newer data loader, training and testing functions.
+<img src="C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/CNN2D.png" width="400" img align="right">
+
+This is the Version of `SincNet` with newer data loaders, training and testing functions.
+
+It also has a modified version called `SincNet2D` that converts the ouput of of SincNet's bandpass filters to a **2D tensor**. This **2D tensor** is then subject to **2D CNN layers** (such as Conv2D, maxpooling2D and Batchnorm2D).
 
 ## Conda Environment Setup
 
@@ -23,9 +27,13 @@ To create the conda environment `SincNet`, with **gpu** support, run:
 bash ./create_conda_environment.sh -g
 ```
 
-> :warning: **Warning**: conda environment may not be activated after the execution of the script! :warning:
+> :warning: **Warnings**: :warning:
+>
+> * conda environment may not be activated after the execution of the script! 
 >
 > ​			&rarr; use `conda activate $envname` to do so. *(Remove `$envname` and replace it by the name of your environment. Default is `SincNet`.)*
+>
+> * To activate conda, we use a method that is compatible with versions of conda (4.6+). If you have a lower version please follow an other method or update conda.
 
 ### Dependency File
 
@@ -40,7 +48,7 @@ To create the conda environment `SincNet`, with **gpu** support, run:
 conda env create -f SincNet.yml
 ```
 
-To create the conda environment `SincNet_CPU`, with **cpu** support, run:
+To create the conda environment `SincNet`, with **cpu** support, run:
 
 ``` bash
 conda env create -f SincNet_CPU.yml
@@ -80,7 +88,7 @@ conda install -y librosa prettytable jupyterlab pysoundfile tqdm -c conda-forge
 * Within conda environment, pip Install those libraries too
 
   ```bash
-  pip install nnAudio, nbresuse, torchsummary
+  pip install nnaudio nbresuse torchsummary
   ```
 
 Those packages are compatible with pytorch 1.1.0
@@ -127,7 +135,20 @@ You can either use the **python script** `preprocessing.py` to preprocess the au
 
 #### Python Script
 
-[TODO]
+`preprocessing.py` has 6 system arguments that must all be used:
+
+1. The absolute path to the train audio files ***($TRAIN_FOLDER)***.  
+2. The absolute path to the test audio files ***($TEST_FOLDER)***.  
+3. The absolute path to save the preprocessed train audio files ***($OUTPUT_TRAIN_FOLDER)***.  
+4. The absolute path to save the preprocessed test audio files ***($OUTPUT_TEST_FOLDER)***.   
+5. The sampling rate of the preprocessing **($sr)** in hz.
+6. The window length **($wlen)** in ms.
+
+To create the tensors for `SincNet`, replace the `$var` by the paths and run the following:
+
+```bash
+python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $sr $wlen
+```
 
 #### Notebook Preprocessing
 
@@ -135,13 +156,13 @@ The preprocessing is done in the notebook `Pre-processing_audio_files_to_Tensors
 
 In this notebook, you should replace the values of the variables `dir_audio_train` and `dir_audio_test` with the paths of the Train and Test data that you fetched before hand. 
 
-![Replace values here](Images/Readme.md_Images/Pre_Image1.PNG)
+![Replace values here](C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image1.PNG)
 
 ##### Training Set
 
 Afterward, execute everything before **Preprocessing train audio on Energy** in the notebook. Then proceed to change the values of the variables and the folder's  location to your liking.
 
-![Replace values here](Images/Readme.md_Images/Pre_Image2.PNG)
+![Replace values here](C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image2.PNG)
 
 In our tests, we preprocessed with those values:
 
@@ -192,7 +213,7 @@ To train a model, you must run the python script `main.py`.
 - `-cfg|--configPath` with this option, you indicate the path of the configuration file you would like to use
 
 * `-fn|--FileName` if this option has a value set, the saved models will be named after this value
-* `-tdp|--TestDataPath` if this option has a value set, the path of the saved test tensor files will be set after this value ***(usefull for testing a model)***
+* `-tdp|--TestDataPath` if this option has a value set, the path of the saved test tensor files will be set after this value ***(usefull only for testing a model)***
 * `-c|--cuda` if this option is set, the pytorch code will run with the Cuda device you specified. It defaults to -1, meaning that the CPU is chosen
 
 To train a model with `test.cfg` on device `cuda:0`, execute the following command:
@@ -216,8 +237,6 @@ To test your previously trained model `test.cfg` on test data `insert_path_here`
 ```bash
 python Test_Model.py --configPath=cfg/test.cfg --TestDataPath=insert_path_here/ --cuda=0
 ```
-
-
 
 ## Utilities
 
