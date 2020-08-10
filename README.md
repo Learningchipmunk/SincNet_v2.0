@@ -1,7 +1,5 @@
 # SincNet v2.0 for DCASE:
 
-[//]: <> "<img src="Images/Readme.md_Images/CNN2D.png" width="400" img align="center">"
-
 This is the Version of `SincNet` with newer data loaders, training and testing functions.
 
 It also has a modified version called `SincNet2D` that converts the ouput of of SincNet's bandpass filters to a **2D tensor**. This **2D tensor** is then subject to **2D CNN layers** (such as Conv2D, maxpooling2D and Batchnorm2D).
