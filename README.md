@@ -1,6 +1,6 @@
 # SincNet v2.0 for DCASE:
 
-<img src="C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/CNN2D.png" width="400" img align="right">
+<img src="Images/Readme.md_Images/CNN2D.png" width="400" img align="right">
 
 This is the Version of `SincNet` with newer data loaders, training and testing functions.
 
