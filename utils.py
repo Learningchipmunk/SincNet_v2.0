@@ -352,7 +352,7 @@ class Dataset(torch.utils.data.Dataset):
             
             if(not self.train):
                 ## Number of frames extracted from tensors
-                N_fr=int((X.shape[0]-wlen)/(wshift))+1
+                N_fr = int((X.shape[0]-wlen)/(wshift)) + 1
 
                 ## Appends the (tensor idenx in list_ID, chunk number) to the list of IDs and chunks
                 self.list_IDs_chunks += [(i, j) for j in range(0, N_fr)]

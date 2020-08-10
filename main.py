@@ -114,6 +114,9 @@ mixup_batch_prop=float(options.mixup_batch_prop)
 same_classes=str_to_bool(options.same_classes)
 seed=int(options.seed)
 
+#[Misc]
+use_SincConv_fast = str_to_bool(options.use_SincConv_fast)
+
 
 ## The location of all the wav files are stored here:
 # training list
@@ -148,7 +151,11 @@ wshift=int(fs*cw_shift/1000.00)
 print("Selecting Cuda device... \t\t", end="")
 Desired_cuda_device_number = int(options.cuda)
 
-if torch.cuda.is_available(): # we'll use cuda
+if(Desired_cuda_device_number == -1):
+    device = "cpu"
+    torch.cuda.set_device(device)
+    print("CPU was selected successfully!")
+elif torch.cuda.is_available(): # we'll use cuda
     device = "cuda:"+str(Desired_cuda_device_number)
     torch.cuda.set_device(device)
     if(torch.cuda.current_device() == Desired_cuda_device_number and torch.cuda.is_available()):
@@ -156,7 +163,9 @@ if torch.cuda.is_available(): # we'll use cuda
     else:
         print("Cuda was not selected successfully...")
 else:
-    print("Cuda device(s) is(are) not available.")
+    device = "cpu"
+    torch.cuda.set_device(device)
+    print("Cuda device(s) is(are) not available... \t We selected CPU instead!")
 
 
 ## <!>------------------- Initializing the Networks with .cfg options -------------------<!> ##
@@ -179,7 +188,8 @@ if is_conv2D:
             'cnn_use_laynorm':cnn_use_laynorm,
             'cnn_use_batchnorm':cnn_use_batchnorm,
             'cnn_act': cnn_act,
-            'cnn_drop':cnn_drop,          
+            'cnn_drop':cnn_drop,
+            'use_SincConv_fast': use_SincConv_fast,          
             }
 else:
     CNN_arch = {'input_dim': wlen,
@@ -192,7 +202,8 @@ else:
             'cnn_use_laynorm':cnn_use_laynorm,
             'cnn_use_batchnorm':cnn_use_batchnorm,
             'cnn_act': cnn_act,
-            'cnn_drop':cnn_drop,          
+            'cnn_drop':cnn_drop,
+            'use_SincConv_fast': use_SincConv_fast,                      
             }
 
 ## Initializes SincNet:
@@ -300,6 +311,22 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window3000_PReLu_Drop30.cfg --FileName=CNNlay6_DNN1024_Rand0PreEnergy4000ms_Scheduler_Window3000ms_PReLu_Drop30_try2 --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Schedulerfact0.2_Window800ms_PReLu_Drop30 --cuda=1 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --cuda=0 &
+
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_FreezeSincNet --cuda=0 > nohup_freezed.out &
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_normalSincNet --cuda=0 > nohup_normal.out &
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_1DConvOnly_PReLu_Drop30.cfg --cuda=0 > nohup_ConOnly.out &
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_test --cuda=1 > nohup_test.out &
+
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4000_16kHz_Scheduler_Drop30.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_16kHz_Scheduler_Drop30.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_16kHz_DNN512_Scheduler_Drop30.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_16kHz_DNN256_FirstMaxpoolW1_Scheduler_Drop30.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow3000_ModifCNN_Scheduler_Drop30.cfg --cuda=1 >nohup_espoir.out &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_test2 --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:
@@ -323,6 +350,10 @@ is_SincNet            = "SincNet" in options.configPath
 #N_eval_epoch = 1
 #same_classes = True
 
+## Freezing Sinc filters:
+#print("Parameters of Sinc filters are freezed.")
+#Main_net.CNN_net.conv[0].low_hz_.requires_grad  = False
+#Main_net.CNN_net.conv[0].band_hz_.requires_grad = False
 
 ## Loading previously trained model if needed:
 Main_net, CNN_net, DNN1_net, DNN2_net, previous_epoch, min_loss = LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net,
