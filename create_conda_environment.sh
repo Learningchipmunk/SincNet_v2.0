@@ -4,7 +4,8 @@
 gpu=0
 envname=SincNet
 pytorchversion=1.1.0
-torchvision==0.3.0
+torchvision=0.3.0
+device=""
 
 usage()
 {
@@ -42,8 +43,15 @@ if [ "$CONT" == "n" ]; then
   exit
 else
 # user chooses to create conda env
+    # stores device:
+    if [ $gpu -eq "1" ]; then
+        device="gpu #$gpu"
+    else
+        device="cpu"
+    fi
+
     # prompt user for conda env name
-    echo "creating and setting up conda environment $envname gpu $gpu pytorch version $pytorchversion"
+    echo "creating and setting up conda environment $envname with pytorch version $pytorchversion on $device"
     conda create -y --name $envname python=3.6.9 numpy=1.16.1
 
     echo "installing base packages"
@@ -54,7 +62,7 @@ else
     conda activate $envname
 
     echo "pip install in $CONDA_PREFIX"
-    pip install nnAudio, nbresuse, torchsummary
+    pip install nnaudio nbresuse torchsummary
 
     echo "conda install pytorch in $CONDA_PREFIX"
     if [ $gpu -eq "1" ]; then
