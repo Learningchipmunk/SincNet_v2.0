@@ -9,15 +9,19 @@ Description:
  
 How to run it:
  python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $sr $wlen
-    ex: python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 5000 32000
+    ex: python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000
 
 NOTE: This script is case sensitive.
+
+python preprocessing.py /data/dcase2018/task2/FSDKaggle2018.audio_train/ /data/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000
+python preprocessing.py /data/dcase2018/task2/FSDKaggle2018.audio_train/ /data/dcase2018/task2/FSDKaggle2018.audio_test/ Data/Audio_Tensors/Train/Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz_Random0Padding/ Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz_Random0Padding/ 1000 32000
 """
 
 
 import librosa
 import librosa.display
 import soundfile
+import shutil
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -38,6 +42,16 @@ def Normalization(signal):
         signal (list or np.array): audio file normalized as 1D list.
     """
     return signal/np.max(np.abs(signal))   
+
+
+def plotImg(audio, samplingRate, ylabel = "Amplitude", name = "Audio"):
+    librosa.display.waveplot(audio, sr=samplingRate)
+    plt.ylabel(ylabel)
+    plt.title('Amplitude envelope of a waveform')
+    plt.savefig(name)
+    plt.clf()
+
+
 
 
 def EnergyWindowMean(audio, L=300, stride=150, padding = False, removingZeros = False, debug_mode = False):
@@ -298,11 +312,11 @@ def preprocess(targetSamplingRate,
         print("Please set a value for the threshold var.")
         return -1
     
-   # Folder creation if the folder path does not exist:
-    try:
-        os.stat(path_to_save)
-    except:
-        os.mkdir(path_to_save)
+   # Folders creation if the folder path does not exist:
+    if not os.path.exists(path_to_save):
+        os.makedirs(path_to_save)
+
+    print("Done!")
     
     
     for i, filename in enumerate(AudioFiles):
@@ -317,15 +331,10 @@ def preprocess(targetSamplingRate,
 
 
         
-        ## Shows the delay
-        if(i == 0):
-            print("In the following preprocessing, the delay is equal to {}ms.".format(delay / targetSamplingRate * 1000))
-            print("\n")
 
 
-
-        ## Prints the first 10 audio files:
-        printInterval = i<10
+        ## Does not display info on audio files:
+        printInterval = False
 
         ## We use the preprocessing algorithms use above:
         preprocessedTrainAudio = TrimEnergy(Normalization(train_audio),
@@ -339,7 +348,18 @@ def preprocess(targetSamplingRate,
                                             random_padding_zeros = random_padding_zeros,
                                             repeating_signal = repeating_signal,
                                             printInterval = printInterval)
-            
+
+
+        ## Plotting first 10 audios in a temporary directory:
+        if(i<10):
+            imgs_path = "temporary_images/"
+            if not os.path.exists(imgs_path):
+                print("Saving temporary images of audio files in the directory `{}`".format(imgs_path))
+                os.mkdir(imgs_path)
+
+            name = imgs_path + "audio_" + filename.split(".")[0]
+            plotImg(preprocessedTrainAudio, targetSamplingRate, name=name)
+
         ## Saving audio files if requested:        
         if(writing_audio):
             soundfile.write(path_to_save_audio + "/" + filename, data=preprocessedTrainAudio, samplerate=targetSamplingRate)
@@ -358,8 +378,6 @@ def preprocess(targetSamplingRate,
             print('audio sample {0} is too small ! His length is equal to {1}'.format(filename, len(preprocessedTrainAudio)))
             break
 
-    print("Pre-processing is done !")
-    print("Wrote in the " + path_to_save + " folder!")
 
 
 def main():
@@ -384,13 +402,13 @@ def main():
     # Stores the data relevant to the preprocessing:
     window_length = int(sys.argv[5])#ms
     targetSamplingRate = int(sys.argv[6])#Hz
-
     ## -- End of handling arguments -- ##
 
-
+    print("Reading audio files... \t\t\t\t\t\t\t\t", end="")
     # Gets the names of the .wav files in the folder
     trainAudioFiles = [f for f in listdir(in_folder_train) if isfile(join(in_folder_train, f))]
     testAudioFiles = [f for f in listdir(in_folder_test) if isfile(join(in_folder_test, f))]
+    print("Done!")
 
     ## Defining parameters for Preprocessing:
     # Parameters used to read audio files:
@@ -420,6 +438,8 @@ def main():
     writingDirAudioTrain_3 = "Data/Audio_Files/NeedToCreateDir"
     writing_audio = False
 
+
+    print("Beginning preprocessing of train audio files with fs={0}Hz and wlen={1}... \t".format(targetSamplingRate, window_length), end="")
     ## Runinng the preprocessing script on Train data:
     preprocess(targetSamplingRate,
             trainAudioFiles,
@@ -434,7 +454,10 @@ def main():
             padding = padding,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
+    print("Preprocessing of train audio is done!")
+    print("Wrote in the " + out_folder_train + " directory!\n")
 
+    print("Beginning preprocessing of test audio files with fs={0}Hz and wlen={1}... \t".format(targetSamplingRate, window_length), end="")
     ## Runinng the preprocessing script on Test data with same paramters as Train data:
     preprocess(targetSamplingRate,
             testAudioFiles,
@@ -449,6 +472,14 @@ def main():
             padding = padding,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
+    print("Preprocessing of test audio is done!")
+    print("Wrote in the " + out_folder_train + " directory!\n")
+
+    ## Removing temporary images
+    shutil.rmtree("temporary_images/")
+    print("Removed all audio images.")
+
+
 
 if __name__ == "__main__":
     # execute only if run as a script

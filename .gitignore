@@ -26,3 +26,7 @@ nohup*
 
 # Ignores fastai models:
 models/*
+
+# Ignores Temporary files created by scripts:
+temporary*
+temporary*/

@@ -129,10 +129,8 @@ snt_te=len(tensors_lst_te)
 
 
 # Folder creation
-try:
-    os.stat(output_folder)
-except:
-    os.mkdir(output_folder) 
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
     
     
 # setting seed

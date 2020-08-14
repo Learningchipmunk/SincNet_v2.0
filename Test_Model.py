@@ -271,7 +271,7 @@ if options.TestDataPath == 'None':
             data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window5000ms_32kHz_Random0Padding/"
 
 else:
-    data_folder_test = options.TestPath
+    data_folder_test = options.TestDataPath
 
 # Checks if path was modified, if not there is a problem!
 if data_folder_test == "Data/Audio_Tensors/Test/":
