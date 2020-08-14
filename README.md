@@ -131,11 +131,38 @@ Follow the [link](https://www.kaggle.com/c/freesound-audio-tagging/data), regist
 
 ### Preprocessing
 
+The preprocessing is our way of extracting features from the audio files. Our script **normalizes** audio files then **removes** from the start and the end parts of the audio **that are inferior to a defined threshold** relative to the audio's **energy mean** (by default it is 25%). It also supports multiple **padding** methods for audio files incase they are below the required length **(wlen)**.
+
+In our many tests, we used the preprocessing script with those values:
+
+* **targetSamplingRate** = [16kHz, 32kHz]
+* **window_length** = [1000ms, 4000ms, 4400ms, 5000ms]
+* **delay, L, stride, random_padding_zeros, repeating signal,** etc... Were set after multiple test runs and were chosen based on their results. You can change them to your convenience, but keep in mind that you might not have the same results as we did...
+* We tried several methods for padding:
+
+  * **Default Padding**: Adding the same amount of zeros left and right in a deterministic way.
+  * **repeating_signal**: Repeating the signal until desired length is reached.
+  * **random_padding_zeros**: Adding a random number of zeros to the left and the remaining amount to the right.
+
+ &rarr; **random_padding_zeros** gave us the best results, this is why we **recommend** using it.
+
+> :warning: **Remark**:  :warning:
+>
+> We recommend that you set **preprocessing_wlen = input_wlen + 2x wshift + 1** in order to have multiple possibilities of reading for the same audio file. (**input_wlen **and **wshift** are the values you will set in the `.cfg` in order to train your network. They are respectively the **input size of your network** (Input Audio length in **ms**) and the **window shift** (Hop length) between each chunk of audio.)
+>
+> * Indeed it enables time shifting, our **DataSet loads a random chunk of the audio**. If the audio is exactly the size of the input required, it won't have much choice but to load the entire audio each time.
+>
+> * Moreover, the **DataSet loads differently data for validation and test**, it goes through the audio from the beginning to the end of the audio by loading a chunk of the **input size of your network** then after each successful loads, it shifts by `wshift` **(Time Shifting to the right)**. 
+>
+>   ​	&rarr;  Consequently, if you choose to set the **input size of your network to 800ms**, if you set **preprocessing_wlen to 1000ms**, you will have a minimum of 3 audio samples for each epoch of validation and/or test.  
+
+
+
 You can either use the **python script** `preprocessing.py` to preprocess the audio files or the **notebook** `Pre-processing_audio_files_to_Tensors`. 
 
 #### Python Script
 
-`preprocessing.py` has 6 system arguments that must all be used:
+`preprocessing.py` has 6 system arguments that **do not have default values**:
 
 1. The absolute path to the train audio files ***($TRAIN_FOLDER)***.  
 2. The absolute path to the test audio files ***($TEST_FOLDER)***.  
@@ -158,29 +185,13 @@ The preprocessing is done in the notebook `Pre-processing_audio_files_to_Tensors
 
 In this notebook, you should replace the values of the variables `dir_audio_train` and `dir_audio_test` with the paths of the Train and Test data that you fetched before hand. 
 
-![Replace values here](SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image1.PNG)
+![Replace values here](Images/Readme.md_Images/Pre_Image1.PNG)
 
 ##### Training Set
 
 Afterward, execute everything before **Preprocessing train audio on Energy** in the notebook. Then proceed to change the values of the variables and the folder's  location to your liking.
 
-![Replace values here](SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image2.PNG)
-
-In our tests, we preprocessed with those values:
-
-* **targetSamplingRate** = [16kHz, 32kHz]
-
-* **window_length** = [1000ms, 4000ms, 4400ms, 5000ms]
-
-  > * **delay, L, stride, random_padding_zeros, repeating signal,** etc... Were set after multiple test runs and were chosen based on their results. You can change them to your convenience, but keep in mind that you might not have the same results as we did...
-  >
-  > * We tried several methods for padding:
-  >
-  >   * **Default Padding**: Adding the same amount of zeros left and right in a deterministic way.
-  >   * **repeating_signal**: Repeating the signal until desired length is reached.
-  >   * **random_padding_zeros**: Adding a random number of zeros to the left and the remaining amount to the right.
-  >
-  >    **random_padding_zeros** gave us the best results, this is why we recommend using it.
+![Replace values here](Images/Readme.md_Images/Pre_Image2.PNG)
 
 ##### Testing Set
 
@@ -203,6 +214,8 @@ In SincNet, the configuration files are usually in the cfg directory, they are r
 5. *[optimization]*, that reports the main hyperparameters used to train the architecture.
 
 * Once you setup the *config* file, you can attempt to train your model. See [Training and Testing Models.](### Training and Testing Models)
+
+> :warning: **Remark:** You should change the `output_folder` in ***[data]*** it after each run!  :warning:
 
 ### Training and Testing Models
 

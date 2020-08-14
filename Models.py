@@ -676,9 +676,6 @@ class SincNet2D(nn.Module):
             else:
                 self.bn.append(nn.BatchNorm2d(N_filt, momentum=0.05))
 
-         
-
-
 
         ## output dimension of the network is computed dynamically
         self.out_dim=N_filt*spec_H*spec_W
@@ -808,22 +805,22 @@ class MLP(nn.Module):
     def __init__(self, options):
         super(MLP, self).__init__()
         
-        self.input_dim=int(options['input_dim'])
-        self.fc_lay=options['fc_lay']
-        self.fc_drop=options['fc_drop']
-        self.fc_use_batchnorm=options['fc_use_batchnorm']
-        self.fc_use_laynorm=options['fc_use_laynorm']
-        self.fc_use_laynorm_inp=options['fc_use_laynorm_inp']
-        self.fc_use_batchnorm_inp=options['fc_use_batchnorm_inp']
+        self.input_dim            = int(options['input_dim'])
+        self.fc_lay               = options['fc_lay']
+        self.fc_drop              = options['fc_drop']
+        self.fc_use_batchnorm     = options['fc_use_batchnorm']
+        self.fc_use_laynorm       = options['fc_use_laynorm']
+        self.fc_use_laynorm_inp   = options['fc_use_laynorm_inp']
+        self.fc_use_batchnorm_inp = options['fc_use_batchnorm_inp']
         
         ## Activation functions given by the .cfg file under [dnn]
-        self.fc_act=options['fc_act']
+        self.fc_act = options['fc_act']
         
-       
-        self.wx  = nn.ModuleList([])
-        self.bn  = nn.ModuleList([])
-        self.ln  = nn.ModuleList([])
-        self.act = nn.ModuleList([])
+        ## Initializing module list:
+        self.wx   = nn.ModuleList([])
+        self.bn   = nn.ModuleList([])
+        self.ln   = nn.ModuleList([])
+        self.act  = nn.ModuleList([])
         self.drop = nn.ModuleList([])
        
 
@@ -909,7 +906,7 @@ class MLP(nn.Module):
       return x
 
 
-## Creates the main network that contains all the networks:
+## Class that contains all the networks:
 class MainNet(nn.Module):
     
     def __init__(self, CNN_net, DNN1_net, DNN2_net):

@@ -1,7 +1,7 @@
 """
 Audio Preprocessing 
  Author: Jean-Charles LAYOUN 
- Agust 2020
+ August 2020
 
 Description: 
  This code prepares audio files for sound recognition experiments. 
@@ -281,7 +281,7 @@ def preprocess(targetSamplingRate,
                repeating_signal = False,
                path_to_save_audio = None,
                writing_audio = False):
-    """Function that orchestrates the preprocessing.
+    """Function that executes the preprocessing.
 
     Args:
         targetSamplingRate (float): The desired samplig rate in (Hz).
@@ -297,9 +297,6 @@ def preprocess(targetSamplingRate,
         repeating_signal (bool, optional): Indicates if the user wishes to pad repeating the signal until desired length is reached. Defaults to False.
         path_to_save_audio (str, optional): If the user wishes to save the preporcessed audio as wav files, he needs to indicate the path where the algorithm is going to save them. Defaults to None.
         writing_audio (bool, optional): Indicates if  the user wishes to save the preporcessed audio as wav files, if so it needs to bet set to True. Defaults to False.
-
-    Returns:
-        [type]: [description]
     """
     ## Removes user error:
     if(TrimWithEnergy and threshold_percentage==0):
@@ -450,6 +447,7 @@ def main():
             TrimWithEnergy = True,
             padding = padding,
             random_padding_zeros = random_padding_zeros,
+            repeating_signal = repeating_signal,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
     print("Preprocessing of train audio is done!")
@@ -469,6 +467,7 @@ def main():
             TrimWithEnergy = True,
             padding = padding,
             random_padding_zeros = random_padding_zeros,
+            repeating_signal = repeating_signal,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
     print("Preprocessing of test audio is done!")
