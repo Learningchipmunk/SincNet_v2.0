@@ -4,7 +4,7 @@ This is the Version of `SincNet` with newer data loaders, training and testing f
 
 It also has a modified version called `SincNet2D` that converts the ouput of of SincNet's bandpass filters to a **2D tensor**. This **2D tensor** is then subject to **2D CNN layers** (such as Conv2D, maxpooling2D and Batchnorm2D).
 
-![SincNet2D](Images/Readme.md_Images/CNN2D.png)
+![SincNet2D](C:/Users/NLPT4239/Desktop/Images/Readme.md_Images/CNN2D.png)
 
 ## Conda Environment Setup
 
@@ -33,7 +33,7 @@ bash ./create_conda_environment.sh -g
 >
 > ​			&rarr; use `conda activate $envname` to do so. *(Remove `$envname` and replace it by the name of your environment. Default is `SincNet`.)*
 >
-> * To activate conda, we use a method that is compatible with versions of conda (4.6+). If you have a lower version please follow an other method or update conda.
+> * To **activate conda**, we use a method that is compatible with the **versions (4.6+)** of conda. **If you have a lower version** please follow an other method or update conda.
 
 ### Dependency File
 

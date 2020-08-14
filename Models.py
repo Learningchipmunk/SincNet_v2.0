@@ -60,6 +60,10 @@ def act_fun(act_type):
             
 ## Layer that normalizes input in SincNet and MLP
 class LayerNorm(nn.Module):
+    """
+        This class is used by the standard SincNet for layernorm. It is inherited by Ravanelli's implementation.
+        In SincNet2D we decided to switch to the version pytorch offered. See https://pytorch.org/docs/stable/generated/torch.nn.LayerNorm.html
+    """
 
     def __init__(self, features, eps=1e-6):
         super(LayerNorm,self).__init__()
@@ -74,9 +78,8 @@ class LayerNorm(nn.Module):
         return self.gamma * (x - mean) / (std + self.eps) + self.beta
 
     
-## Literally first layer of SincNet:
-
-# They used symetry of sinc in this one:
+## First layer of SincNet:
+# They used symetry of sinc in this one in contrary to SincConv:
 class SincConv_fast(nn.Module):
     """Sinc-based convolution
     Parameters
@@ -112,9 +115,8 @@ class SincConv_fast(nn.Module):
 
         super(SincConv_fast,self).__init__()
 
+        ## If user sets the initial input channel of SincConv to a value different from 1:
         if in_channels != 1:
-            #msg = (f'SincConv only support one input channel '
-            #       f'(here, in_channels = {in_channels:d}).')
             msg = "SincConv only support one input channel (here, in_channels = {%i})" % (in_channels)
             raise ValueError(msg)
 
@@ -129,6 +131,7 @@ class SincConv_fast(nn.Module):
         self.padding = padding
         self.dilation = dilation
 
+        ## For Generalisation purposes only...
         if bias:
             raise ValueError('SincConv does not support bias.')
         if groups > 1:
@@ -138,13 +141,16 @@ class SincConv_fast(nn.Module):
         self.min_low_hz = min_low_hz
         self.min_band_hz = min_band_hz
 
-        # initialize filterbanks such that they are equally spaced in Mel scale
+        ## Initializes the filters' bound :
         low_hz = 30
         high_hz = self.sample_rate / 2 - (self.min_low_hz + self.min_band_hz)
 
+        # initialize filterbanks such that they are equally spaced in Mel scale
         mel = np.linspace(self.to_mel(low_hz),
                           self.to_mel(high_hz),
                           self.out_channels + 1)
+
+        # Converts back to Hz, no longer equally spaced.
         hz = self.to_hz(mel)
         
 
@@ -160,9 +166,11 @@ class SincConv_fast(nn.Module):
         self.window_=0.54-0.46*torch.cos(2*math.pi*n_lin/self.kernel_size);
 
 
-        # (1, kernel_size/2)
+        # Intializes the number of points to the left of the time axis:
         n = (self.kernel_size - 1) / 2.0
-        self.n_ = 2*math.pi*torch.arange(-n, 0).view(1, -1) / self.sample_rate # Due to symmetry, I only need half of the time axes
+
+        # self.n_ = 2*pi*n/fs where n is in [|-(self.kernel_size)/2, -1|]:  
+        self.n_ = 2*math.pi*torch.arange(-n, 0).view(1, -1) / self.sample_rate # Due to symmetry, I only need half of the time axis
 
  
 
@@ -179,25 +187,38 @@ class SincConv_fast(nn.Module):
             Batch of sinc filters activations.
         """
 
+        ## Sens the frequency periods and the window to the same device as the input:
         self.n_ = self.n_.to(waveforms.device)
-
         self.window_ = self.window_.to(waveforms.device)
 
+        ##Initializing low and high frequencies: 
         low = self.min_low_hz  + torch.abs(self.low_hz_)
-        
+        ## Here we force the high frequency to be superior to the low frequency and lower than fs/2 
+        # see doc here https://pytorch.org/docs/stable/generated/torch.clamp.html
+        # This contradicts what Ravanelli et al. said in their paper: 
+        """ From SPEAKER RECOGNITION FROM RAW WAVEFORM WITH SINCNET
+        "Note that no bounds have been imposed to force f2 (high) to
+        be smaller than the Nyquist frequency, since we observed that
+        this constraint is naturally fulfilled during training."        
+        """
         high = torch.clamp(low + self.min_band_hz + torch.abs(self.band_hz_),self.min_low_hz,self.sample_rate/2)
         
         ## Bandwith that is fed :
         band=(high-low)[:,0]
         
+        ## Multiplies the low and high frequencies by 2*pi*n/fs
         f_times_t_low = torch.matmul(low, self.n_)
         f_times_t_high = torch.matmul(high, self.n_)
 
-        band_pass_left=((torch.sin(f_times_t_high)-torch.sin(f_times_t_low))/(self.n_/2))*self.window_ # Equivalent of Eq.4 of the reference paper (SPEAKER RECOGNITION FROM RAW WAVEFORM WITH SINCNET). I just have expanded the sinc and simplified the terms. This way I avoid several useless computations. 
+        ## Computes the expression of the bandpass filter in time frame:
+        # Left of the time axis:
+        band_pass_left=((torch.sin(f_times_t_high)-torch.sin(f_times_t_low))/(self.n_/2))*self.window_ # Equivalent of Eq.7 of the reference paper (SPEAKER RECOGNITION FROM RAW WAVEFORM WITH SINCNET). 
+        # Bandpass for t=0s
         band_pass_center = 2*band.view(-1,1)
-        band_pass_right= torch.flip(band_pass_left,dims=[1])
-        
-        
+        # Right of the time axis:
+        band_pass_right= torch.flip(band_pass_left,dims=[1])#We can do that because of symetry!
+
+        ## <!> Adds up the three parts of the bandpass previously computed in order to have the complete expression here: <!> ##
         band_pass=torch.cat([band_pass_left,band_pass_center,band_pass_right],dim=1)
 
         
@@ -207,12 +228,14 @@ class SincConv_fast(nn.Module):
         self.filters = (band_pass).view(
             self.out_channels, 1, self.kernel_size)
 
+        ## Here we use pytorch conv1d function to compute the convolution between the self.filters and the input: 
+        # See https://pytorch.org/docs/stable/nn.functional.html?highlight=f%20conv1d#torch.nn.functional.conv1d
         return F.conv1d(waveforms, self.filters, stride=self.stride,
                         padding=self.padding, dilation=self.dilation,
                          bias=None, groups=1) 
 
-
-        
+## Method used By Ravanelli before realising that the sinc function was symmetric around the y axis:
+"""        
 # Takes a bandwith and a time and returns a sinc tensor, is used in sinc_conv:
 # @band    is a float 
 # @t_right is a tensor
@@ -283,6 +306,7 @@ class sinc_conv(nn.Module):
         out=F.conv1d(x, filters.view(self.N_filt,1,self.Filt_dim))
     
         return out
+"""
 
 ## The main Network That is used by this Notebook to solve our speaker Recognition problem
 class SincNet(nn.Module):
@@ -437,8 +461,6 @@ class SincNet2D(nn.Module):
             
             # Here, we control the values of the ordinate and abscissa with the variable extent:
             pos = ax[axi][axj].imshow(spec, origin='lower', cmap='jet', aspect='auto')
-            #ax[axi][axj].set_xlabel('Time frames')
-            #ax[axi][axj].set_ylabel('Frequency [Hz]')
 
             # Plot colorbar
             fig.colorbar(pos, ax=ax[axi][axj])
@@ -623,7 +645,7 @@ class SincNet2D(nn.Module):
             self.act.append(act_fun(self.cnn_act[i]))
             
             
-            # N_filt = self.cnn_N_filt[i]
+            # N_filt is equal to self.cnn_N_filt[i]
             ## ! Very important uses SincConv_Fast as first layer(i==0)
             if i==0:
                 if self.use_SincConv_fast:
@@ -703,7 +725,7 @@ class SincNet2D(nn.Module):
                 x = torch.abs(x)
             
             # Max pooling:
-            if i==0:
+            if i==0:# Here we check the value of i because for i=0 the input is still in 2D.
                 x = F.max_pool1d(x, kernel_size = self.cnn_max_pool_len_W[i])
             else:
                 x = F.max_pool2d(x, kernel_size = (self.cnn_max_pool_len_H[i], self.cnn_max_pool_len_W[i]))
@@ -714,22 +736,21 @@ class SincNet2D(nn.Module):
             
             # Compute Energy with average pooling:                     
             if i == 0:
-                ## Old method, too slow:
-                #x = self.EnergyWindowMean(x, N_filter = self.cnn_N_filt[0], L=self.cnn_energy_L, stride=self.cnn_energy_stride, 
-                #                        padding = True, removingZeros = False, debug_mode = self.print_spec)
-                
                 # Taking time of Energy computation:
                 if self.print_spec:
                     t3 = time.time()
                 
-                ## Computing how much zeros we need to add:
+                ## Computing how much zeros we need to add for the padding:
+                # Size of the sequence:
                 N = x.size(2)
+                # Remaining zeros to add:
                 to_pad = self.cnn_energy_stride - (N - self.cnn_energy_L)%self.cnn_energy_stride
-                #print(to_pad)
+                # Here we divide it by two in order to fit with the requirements of avg_pooling1d,
+                # see https://pytorch.org/docs/stable/nn.functional.html#avg-pool1d
                 to_pad /= 2
                 to_pad = int(to_pad)
             
-                # Computing Energy:
+                # Computing the Energy:
                 x = x.pow(2)
                 x = F.avg_pool1d(x, kernel_size=self.cnn_energy_L, stride=self.cnn_energy_stride, padding=to_pad)
                 
@@ -737,9 +758,14 @@ class SincNet2D(nn.Module):
                     t4 = time.time() 
                     print("Temps de calcul pour l'Energie : {}min".format( (t4-t3)/60 ))
                 
+                # Converting the tensor to Log scale:
                 x = self.tensorLogScale(x)
+
+                # Printing the resulting logmel spectrograms:
                 if self.print_spec:
                     self.PrintSpectrograms(x, "Log")
+                
+                ## <!> This is the moment when we switch from 1D to 2D <!> ##:
                 x = x.view(batch, 1, self.cnn_N_filt[i], -1)
 
 

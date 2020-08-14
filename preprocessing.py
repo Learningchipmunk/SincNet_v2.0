@@ -309,6 +309,13 @@ def preprocess(targetSamplingRate,
 
         train_audio, _ = librosa.load(path_to_load + "/" + filename,  sr=targetSamplingRate)
 
+        ## Converts from stereo or more to mono:
+        if(len(train_audio.shape) != 1):
+            print("Warning, SincNet only support one channel (here, channels = {%i})" % (len(train_audio.shape)))
+            print("We took only the first channel of the audio.")
+            train_audio = train_audio[0,:]
+
+
         
         ## Shows the delay
         if(i == 0):

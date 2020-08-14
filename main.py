@@ -327,6 +327,8 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_test2 --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_2dconvs64,128,256_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/vggish_model.cfg --cuda=1 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:
