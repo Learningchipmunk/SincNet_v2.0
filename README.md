@@ -4,7 +4,7 @@ This is the Version of `SincNet` with newer data loaders, training and testing f
 
 It also has a modified version called `SincNet2D` that converts the ouput of of SincNet's bandpass filters to a **2D tensor**. This **2D tensor** is then subject to **2D CNN layers** (such as Conv2D, maxpooling2D and Batchnorm2D).
 
-![SincNet2D](C:/Users/NLPT4239/Desktop/Images/Readme.md_Images/CNN2D.png)
+![SincNet2D](Images/Readme.md_Images/CNN2D.png)
 
 ## Conda Environment Setup
 
@@ -141,8 +141,8 @@ You can either use the **python script** `preprocessing.py` to preprocess the au
 2. The absolute path to the test audio files ***($TEST_FOLDER)***.  
 3. The absolute path to save the preprocessed train audio files ***($OUTPUT_TRAIN_FOLDER)***.  
 4. The absolute path to save the preprocessed test audio files ***($OUTPUT_TEST_FOLDER)***.   
-5. The sampling rate of the preprocessing **($sr)** in hz.
-6. The window length **($wlen)** in ms.
+5. The window length **($wlen)** in ms.
+6. The sampling rate of the preprocessing **($sr)** in hz.
 
 To create the tensors for `SincNet`, replace the `$var` by the paths and run the following:
 
@@ -150,19 +150,21 @@ To create the tensors for `SincNet`, replace the `$var` by the paths and run the
 python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $sr $wlen
 ```
 
+> ex: `python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000`
+
 #### Notebook Preprocessing
 
 The preprocessing is done in the notebook `Pre-processing_audio_files_to_Tensors`. It must be placed at the same level as main.py, in the same directory as Images.
 
 In this notebook, you should replace the values of the variables `dir_audio_train` and `dir_audio_test` with the paths of the Train and Test data that you fetched before hand. 
 
-![Replace values here](C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image1.PNG)
+![Replace values here](SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image1.PNG)
 
 ##### Training Set
 
 Afterward, execute everything before **Preprocessing train audio on Energy** in the notebook. Then proceed to change the values of the variables and the folder's  location to your liking.
 
-![Replace values here](C:/Users/NLPT4239/AppData/Local/Temp/scp14268/home/nlpt4239/SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image2.PNG)
+![Replace values here](SincNet_DCASE_v2.0/Images/Readme.md_Images/Pre_Image2.PNG)
 
 In our tests, we preprocessed with those values:
 

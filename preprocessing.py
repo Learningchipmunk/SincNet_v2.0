@@ -8,13 +8,10 @@ Description:
  It normalizes  audio files then removes start and end parts that are inferior to a threshold of the energy (by default it is 25%). It also pads audio files that are below the required length.
  
 How to run it:
- python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $sr $wlen
+ python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $wlen $sr
     ex: python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000
 
 NOTE: This script is case sensitive.
-
-python preprocessing.py /data/dcase2018/task2/FSDKaggle2018.audio_train/ /data/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000
-python preprocessing.py /data/dcase2018/task2/FSDKaggle2018.audio_train/ /data/dcase2018/task2/FSDKaggle2018.audio_test/ Data/Audio_Tensors/Train/Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz_Random0Padding/ Data/Audio_Tensors/Test/Preprocessed_withEnergy_AudioTensors_Window1000ms_32kHz_Random0Padding/ 1000 32000
 """
 
 
@@ -452,6 +449,7 @@ def main():
             delay = delay,
             TrimWithEnergy = True,
             padding = padding,
+            random_padding_zeros = random_padding_zeros,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
     print("Preprocessing of train audio is done!")
@@ -470,6 +468,7 @@ def main():
             delay = delay,
             TrimWithEnergy = True,
             padding = padding,
+            random_padding_zeros = random_padding_zeros,
             path_to_save_audio = writingDirAudioTrain_3,
             writing_audio = writing_audio)
     print("Preprocessing of test audio is done!")
