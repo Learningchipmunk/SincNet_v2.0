@@ -6,6 +6,36 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
 
 ![SincNet2D](Images/Readme.md_Images/CNN2D.png)
 
+##### Table of content
+
+- [SincNet v2.0 for DCASE:](#sincnet-v20-for-dcase-)
+  * [Conda Environment Setup](#conda-environment-setup)
+    + [Bash Script Setup](#bash-script-setup)
+    + [Dependency File](#dependency-file)
+    + [Step by Step Guide](#step-by-step-guide)
+  * [How to Setup SincNet for Experimentation:](#how-to-setup-sincnet-for-experimentation-)
+    + [Fetch DCASE2018 Task2 Data](#fetch-dcase2018-task2-data)
+      - [On Orange's server](#on-orange-s-server)
+      - [Kaggle](#kaggle)
+          + [Remarks](#remarks)
+    + [Preprocessing](#preprocessing)
+      - [Python Script](#python-script)
+      - [Notebook Preprocessing](#notebook-preprocessing)
+        * [Training Set](#training-set)
+        * [Testing Set](#testing-set)
+    + [Setup the Configuration File](#setup-the-configuration-file)
+    + [Training and Testing Models](#training-and-testing-models)
+      - [Training a Model](#training-a-model)
+      - [Testing a Model](#testing-a-model)
+  * [Utilities](#utilities)
+        * [Path of the previously trained models](#path-of-the-previously-trained-models)
+            * [Results of the previously trained models](#results-of-the-previously-trained-models)
+            * [Tutors](#tutors)
+            * [Author](#author)
+            * [Co-Intern](#co-intern)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 ## Conda Environment Setup
 
 You can use one of the following to setup the conda environment:
@@ -174,7 +204,7 @@ You can either use the **python script** `preprocessing.py` to preprocess the au
 To create the tensors for `SincNet`, replace the `$var` by the paths and run the following:
 
 ```bash
-python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $sr $wlen
+python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $wlen $sr 
 ```
 
 > ex: `python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000`

@@ -4,3 +4,7 @@ epoch 15, running_loss_tr=0.124507 running_acc_tr=0.035678 best_class_acc_te=0.0
 epoch 20, running_loss_tr=0.238470 running_acc_tr=0.092148 best_class_acc_te=0.164644 loss_te=3.355479 window_acc_te=0.161703 
 epoch 25, running_loss_tr=0.064465 running_acc_tr=0.034444 best_class_acc_te=0.186807 loss_te=2.927359 window_acc_te=0.186280 
 epoch 30, running_loss_tr=0.181548 running_acc_tr=0.064062 best_class_acc_te=0.226385 loss_te=2.860383 window_acc_te=0.218277 
+epoch 35, running_loss_tr=0.141052 running_acc_tr=0.041380 best_class_acc_te=0.207916 loss_te=3.014878 window_acc_te=0.205743 
+epoch 40, running_loss_tr=0.183115 running_acc_tr=0.071163 best_class_acc_te=0.234828 loss_te=2.905125 window_acc_te=0.234712 
+epoch 45, running_loss_tr=0.276119 running_acc_tr=0.042660 best_class_acc_te=0.246966 loss_te=2.974060 window_acc_te=0.246585 
+epoch 50, running_loss_tr=0.096286 running_acc_tr=0.055278 best_class_acc_te=0.310290 loss_te=2.522674 window_acc_te=0.303047 
