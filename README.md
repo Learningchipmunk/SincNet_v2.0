@@ -12,15 +12,15 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
   * [Prerequisites](#prerequisites)
   * [Conda Environment Setup](#conda-environment-setup)
     + [Bash Script Setup](#bash-script-setup)
-    + [Dependency File](#dependency-file)
+    + [Dependency File Setup](#dependency-file-setup)
     + [Step by Step Guide](#step-by-step-guide)
   * [How to Setup SincNet for Experimentation:](#how-to-setup-sincnet-for-experimentation-)
     + [Fetch DCASE2018 Task2 Data](#fetch-dcase2018-task2-data)
       - [On Orange's Server](#on-orange-s-server)
-      - [Kaggle](#kaggle)
+      - [On Kaggle's Site](#On Kaggle's Site)
     + [Data Lists and Dicts Generation](#data-lists-and-dicts-generation)
     + [Preprocessing](#preprocessing)
-      - [Python Script](#python-script)
+      - [Python Preprocessing Script](#python-preprocessing-script)
       - [Notebook Preprocessing](#notebook-preprocessing)
         * [Training Set](#training-set)
         * [Testing Set](#testing-set)
@@ -69,7 +69,7 @@ bash ./create_conda_environment.sh -g
 >
 > * To **activate conda**, we use a method that is compatible with the **versions (4.6+)** of conda. **If you have a lower version** please follow an other method or update conda.
 
-### Dependency File
+### Dependency File Setup
 
 `conda env create` has many options, but we will restrict ourselves to two of them:
 
@@ -153,7 +153,7 @@ The DCASE data already reviewed by Lionel is available at `/data2/dcase2018/task
 
 You can store this data on your local machine anywhere as long as you save the path, you will need it for the next steps.
 
-#### Kaggle
+#### On Kaggle's Site
 
 Follow the [link](https://www.kaggle.com/c/freesound-audio-tagging/data), register and download the data.
 
@@ -220,7 +220,7 @@ In our many tests, we used the preprocessing script with those values:
 
 You can either use the **python script** `preprocessing.py` to preprocess the audio files or the **notebook** `Pre-processing_audio_files_to_Tensors`. 
 
-#### Python Script
+#### Python Preprocessing Script
 
 `preprocessing.py` has 6 system arguments that **do not have default values**:
 

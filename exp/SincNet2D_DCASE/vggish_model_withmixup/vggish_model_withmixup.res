@@ -36,3 +36,4 @@ epoch 175, running_loss_tr=0.070755 running_acc_tr=0.090312 best_class_acc_te=0.
 epoch 180, running_loss_tr=0.193989 running_acc_tr=0.032623 best_class_acc_te=0.483905 loss_te=1.973340 window_acc_te=0.466840 
 epoch 185, running_loss_tr=0.091328 running_acc_tr=0.057855 best_class_acc_te=0.483377 loss_te=1.976682 window_acc_te=0.462549 
 epoch 190, running_loss_tr=0.208611 running_acc_tr=0.042822 best_class_acc_te=0.487599 loss_te=1.968144 window_acc_te=0.466622 
+epoch 195, running_loss_tr=0.180896 running_acc_tr=0.034379 best_class_acc_te=0.479156 loss_te=1.958272 window_acc_te=0.458646 
