@@ -4,20 +4,21 @@ This is the Version of `SincNet` with newer data loaders, training and testing f
 
 It also has a modified version called `SincNet2D` that converts the ouput of of SincNet's bandpass filters to a **2D tensor**. This **2D tensor** is then subject to **2D CNN layers** (such as Conv2D, maxpooling2D and Batchnorm2D).
 
-![SincNet2D](Images/Readme.md_Images/CNN2D.png)
+<img src="Images/Readme.md_Images/CNN2D.png" width="400" img align="right">
 
-##### Table of content
+#### Table of Content
 
 - [SincNet v2.0 for DCASE:](#sincnet-v20-for-dcase-)
+  * [Prerequisites](#prerequisites)
   * [Conda Environment Setup](#conda-environment-setup)
     + [Bash Script Setup](#bash-script-setup)
     + [Dependency File](#dependency-file)
     + [Step by Step Guide](#step-by-step-guide)
   * [How to Setup SincNet for Experimentation:](#how-to-setup-sincnet-for-experimentation-)
     + [Fetch DCASE2018 Task2 Data](#fetch-dcase2018-task2-data)
-      - [On Orange's server](#on-orange-s-server)
+      - [On Orange's Server](#on-orange-s-server)
       - [Kaggle](#kaggle)
-          + [Remarks](#remarks)
+    + [Data Lists and Dicts Generation](#data-lists-and-dicts-generation)
     + [Preprocessing](#preprocessing)
       - [Python Script](#python-script)
       - [Notebook Preprocessing](#notebook-preprocessing)
@@ -28,13 +29,16 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
       - [Training a Model](#training-a-model)
       - [Testing a Model](#testing-a-model)
   * [Utilities](#utilities)
-        * [Path of the previously trained models](#path-of-the-previously-trained-models)
-            * [Results of the previously trained models](#results-of-the-previously-trained-models)
-            * [Tutors](#tutors)
-            * [Author](#author)
-            * [Co-Intern](#co-intern)
+       * [Path of the Previously Trained Models](#path-of-the-previously-trained-models)
+    * [Results of the Previously Trained Models](#results-of-the-previously-trained-models)
+    * [Tutors](#tutors)
+    * [Author](#author)
+    * [Co-Intern](#co-intern)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+## Prerequisites
+
+* Linux
+* Miniconda or Anaconda **version (4.6+)**
 
 ## Conda Environment Setup
 
@@ -143,7 +147,7 @@ Those packages are compatible with pytorch 1.1.0
 
 You can either fetch the Data from Orange's server (**recommended**) or fetch it from kaggle directly.
 
-#### On Orange's server
+#### On Orange's Server
 
 The DCASE data already reviewed by Lionel is available at `/data2/dcase2018/task2/FSDKaggle2018.audio_train/` and `/data2/dcase2018/task2/FSDKaggle2018.audio_test/`on the server **yd-4q2twm2**.
 
@@ -153,11 +157,37 @@ You can store this data on your local machine anywhere as long as you save the p
 
 Follow the [link](https://www.kaggle.com/c/freesound-audio-tagging/data), register and download the data.
 
-###### Remarks
+### Data Lists and Dicts Generation
 
->  Data lists are already available for DCASE data.
+In order to run **SincNet**, you must have `data_lists` containing the names of the audio files you wish to use for `training`, `validation` and `testing`. Same goes for the `lab_dicts`, you must save the **dictionaries of ground truths** for `training` *(includes the validation tensors)* and `testing` the models.
 
-> :warning: **If you are not using DCASE audios**: you must generate your own data lists! :warning:
+>  **:warning: Remarks:warning:**
+>
+>  If you are using **DCASE audios**; the data lists are already **available**. You can safely **skip this part** if you plan on using them.
+>
+>  If you are **not** using **DCASE audios**: you must generate your own data lists! Scripts provided might not work, they are specifically made for DCASE `CSVs` and may not be suitable for your data. 
+
+1. `Generate_datalists.py` has 2 system arguments that **do not have default values**:
+   1. The relative path to the txt file containing the audio names ***($TXT_PATH)***.  
+   2. The category of the audios, must **contain strictly** one of these words: [`train`, `test`,  `valid`]. It is **not** case sensitive, `TrAiNing` will be recognized. ***($DATA_CATEGORY)***.  
+
+``` bash
+python Generate_datalists.py $TXT_PATH $DATA_CATEGORY
+```
+
+> ex: `python Generate_datalists.py data_lists/fold1_train.txt Train`
+
+
+
+2. Generate_Groundtruths.py` has 2 system arguments that **do not have default values**:
+   1. The relative path to the txt file containing the audio names ***($CSV_PATH)***.  
+   2. The category of the audios, must **contain strictly** one of these words: [`train`, `test`]. It is **not** case sensitive, `TrAiNing` will be recognized. ***($DATA_CATEGORY)***.  
+
+```bash
+Generate_Groundtruths.py $CSV_PATH $DATA_CATEGORY
+```
+
+> ex: python Generate_Groundtruths.py data_lists/train.csv Train
 
 ### Preprocessing
 
@@ -176,7 +206,7 @@ In our many tests, we used the preprocessing script with those values:
 
  &rarr; **random_padding_zeros** gave us the best results, this is why we **recommend** using it.
 
-> :warning: **Remark**:  :warning:
+> :warning: **Remarks**  :warning:
 >
 > We recommend that you set **preprocessing_wlen = input_wlen + 2x wshift + 1** in order to have multiple possibilities of reading for the same audio file. (`input_wlen` and `wshift` are the values you will set in the `.cfg` in order to train your network. They are respectively the **input size of your network** (Input Audio length in **ms**) and the **window shift** (Hop length) between each chunk of audio.)
 >
@@ -196,8 +226,8 @@ You can either use the **python script** `preprocessing.py` to preprocess the au
 
 1. The absolute path to the train audio files ***($TRAIN_FOLDER)***.  
 2. The absolute path to the test audio files ***($TEST_FOLDER)***.  
-3. The absolute path to save the preprocessed train audio files ***($OUTPUT_TRAIN_FOLDER)***.  
-4. The absolute path to save the preprocessed test audio files ***($OUTPUT_TEST_FOLDER)***.   
+3. The relative path to save the preprocessed train audio files ***($OUTPUT_TRAIN_FOLDER)***.  
+4. The relative path to save the preprocessed test audio files ***($OUTPUT_TEST_FOLDER)***.   
 5. The window length **($wlen)** in ms.
 6. The sampling rate of the preprocessing **($sr)** in hz.
 
@@ -208,6 +238,8 @@ python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_
 ```
 
 > ex: `python preprocessing.py /data2/dcase2018/task2/FSDKaggle2018.audio_train/ /data2/dcase2018/task2/FSDKaggle2018.audio_test/ Data/test_train/ Data/test_test/ 1000 32000`
+
+>  After execution, `preprocessing.py` will create a temporary directory where it will store the images of the first 10 audios. Before the end, it will remove the temporary directory and everything inside it.
 
 #### Notebook Preprocessing
 
@@ -243,7 +275,7 @@ In SincNet, the configuration files are usually in the cfg directory, they are r
 4. *[class]*, that specify the logsoftmax classification part.
 5. *[optimization]*, that reports the main hyperparameters used to train the architecture.
 
-* Once you setup the *config* file, you can attempt to train your model. See [Training and Testing Models.](### Training and Testing Models)
+* Once you setup the *config* file, you can attempt to train your model. See [Training and Testing Models.](#Training and Testing Models)
 
 > :warning: **Remark:** You should change the `output_folder` in ***[data]*** it after each run!  :warning:
 
@@ -271,9 +303,9 @@ python main.py --configPath=cfg/test.cfg --cuda=0
 
 To test a model, you must run the python script `Test_Model.py`.
 
-* `Test_Model.py` has the same options as `main.py`. ([See above](### Training a Model).)
+* `Test_Model.py` has the same options as `main.py`. ([See above](#Training a Model).)
 
-* In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#### Testing Set) section!
+* In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#Testing Set) section!
 
   * > :warning: **Remark**: If you are using DCASE data and you **did not** re-create your own datalists, you can use ours by keeping the values of `testTensorFiles` and `lab_dict` unchanged. :warning:
 
@@ -285,11 +317,11 @@ python Test_Model.py --configPath=cfg/test.cfg --TestDataPath=insert_path_here/ 
 
 ## Utilities
 
-##### Path of the previously trained models
+##### Path of the Previously Trained Models
 
 They are on the **yd-4q2twm2** server @ `/home/nlpt4239/SincNet_DCASE_v2.0/exp/SincNet_DCASE_v2.0`
 
-##### Results of the previously trained models
+##### Results of the Previously Trained Models
 
 You can find the most relevant results of previously trained models [here](https://gitlab.tech.orange/golden-ear-for-things/nn-acoustic-feature-extraction/test).
 
