@@ -148,7 +148,7 @@ In our many tests, we used the preprocessing script with those values:
 
 > :warning: **Remark**:  :warning:
 >
-> We recommend that you set **preprocessing_wlen = input_wlen + 2x wshift + 1** in order to have multiple possibilities of reading for the same audio file. (**input_wlen **and **wshift** are the values you will set in the `.cfg` in order to train your network. They are respectively the **input size of your network** (Input Audio length in **ms**) and the **window shift** (Hop length) between each chunk of audio.)
+> We recommend that you set **preprocessing_wlen = input_wlen + 2x wshift + 1** in order to have multiple possibilities of reading for the same audio file. (`input_wlen` and `wshift` are the values you will set in the `.cfg` in order to train your network. They are respectively the **input size of your network** (Input Audio length in **ms**) and the **window shift** (Hop length) between each chunk of audio.)
 >
 > * Indeed it enables time shifting, our **DataSet loads a random chunk of the audio**. If the audio is exactly the size of the input required, it won't have much choice but to load the entire audio each time.
 >
