@@ -328,7 +328,8 @@ You can find the most relevant results of previously trained models [here](https
 
 ##### Tutors
 
-Lionel Delphin-Poulat [link.](https://fr.linkedin.com/in/lionel-delphin-6a091a162)
+Lionel Delphin-Poulat [link](https://fr.linkedin.com/in/lionel-delphin-6a091a162)
+
 Cyril Plapous [link.](https://fr.linkedin.com/in/cyril-plapous-983b04b1)
 
 #####  Author
