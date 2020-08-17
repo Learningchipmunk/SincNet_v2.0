@@ -118,6 +118,13 @@ def read_conf():
 
     #[optimization]
     if('optimization' in Config.sections()):
+        ## optimizer_type:
+        if 'optimizer_type' in Config['optimization']:
+            options.optimizer_type=Config.get('optimization', 'optimizer_type')
+        else:
+            options.optimizer_type='RMSprop'
+            print("You did not specify the value of `optimizer_type`, it is set to {}.".format(options.optimizer_type))
+
         options.lr=Config.get('optimization', 'lr')
 
         ## use_scheduler:
@@ -126,6 +133,14 @@ def read_conf():
         else:
             print("You did not specify the value of `use_scheduler`, it is set to False.")
             options.use_scheduler='False'
+
+        ## scheduler_type:
+        if 'scheduler_type' in Config['optimization']:
+            options.scheduler_type=Config.get('optimization', 'scheduler_type')
+        else:
+            options.scheduler_type='ReduceLROnPlateau'
+            print("You did not specify the value of `scheduler_type`, it is set to {}.".format(options.scheduler_type))
+
 
         ## scheduler_patience:
         if 'scheduler_patience' in Config['optimization']:

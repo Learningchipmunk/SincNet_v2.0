@@ -68,6 +68,7 @@ else
     if [ $gpu -eq "1" ]; then
         echo "install pytorch with gpu support"
         conda install pytorch==$pytorchversion torchvision==$torchvision -c pytorch
+        pip install fastai
     else
         echo "install pytorch on cpu only"
         conda install pytorch==$pytorchversion torchvision==$torchvision cpuonly -c pytorch

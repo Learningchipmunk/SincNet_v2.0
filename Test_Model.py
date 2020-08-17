@@ -42,6 +42,9 @@ python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergy
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy5000ms_DNN256_32kHz_Energy2048_batchsize16_Scheduler_Window4000ms_Drop30_Notebook --cuda=1
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_2dconvs64,128,256_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet2D/vggish_model.cfg --cuda=0
+Todo:
+    python Test_Model.py --configPath=cfg/test.cfg --cuda=0
+    python Test_Model.py --configPath=cfg/test.cfg --FileName=test_optimizer_Adamax --cuda=1
 """
 import numpy as np
 import torch

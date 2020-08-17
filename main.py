@@ -27,7 +27,7 @@ from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
 from Models import SincNet2D as CNN2D
 from read_conf_files import read_conf, str_to_bool
-from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel
+from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel, InitOptimizer
 from training_and_acc_fun import train, accuracy
 
 
@@ -96,8 +96,10 @@ class_act=list(map(str, options.class_act.split(',')))
 
 
 #[optimization]
+optimizer_type=str(options.optimizer_type)
 lr=float(options.lr)
 use_scheduler = str_to_bool(options.use_scheduler)
+scheduler_type = str(options.scheduler_type)
 scheduler_patience = int(options.scheduler_patience)
 scheduler_factor = float(options.scheduler_factor)
 batch_size=int(options.batch_size)
@@ -250,19 +252,20 @@ print("Initialization done!")
 
 ## <!>---------------------------- Initializing optimizers ----------------------------<!>
 ## Uses by default RMSprop optimization
-# Maybe use adam Like Paul ??? Faire des tests (chapitre 8 paragraphe 5) + SGD
 
 print("Initializing optimizers... \t\t", end="")
 # Added momentum:
 momentum = 0.9 if use_mixup else 0
     
-#lr = 6.2500e-05
-optimizer_CNN  = optim.RMSprop(CNN_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
-optimizer_DNN1 = optim.RMSprop(DNN1_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
-optimizer_DNN2 = optim.RMSprop(DNN2_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
+# InitOptimizers
+optimizer_CNN  = InitOptimizer(optimizer_type, CNN_net.parameters(), lr=lr, momentum=momentum)#optim.RMSprop(CNN_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
+optimizer_DNN1 = InitOptimizer(optimizer_type, DNN1_net.parameters(), lr=lr, momentum=momentum)#optim.RMSprop(DNN1_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
+optimizer_DNN2 = InitOptimizer(optimizer_type, DNN2_net.parameters(), lr=lr, momentum=momentum)#optim.RMSprop(DNN2_net.parameters(), lr=lr,alpha=0.95, eps=1e-8, momentum=momentum) 
 
+# Puts the in the same wrapper:
 optimizers = Optimizers(optimizer_CNN, optimizer_DNN1, optimizer_DNN2)
-print("Optimizers are ready!")
+
+print("{} optimizers are ready!".format(optimizer_type))
 
 
 ## Initializing all schedulers for optims:
@@ -272,7 +275,8 @@ scheduler_DNN1 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN1, mode='min'
 scheduler_DNN2 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN2, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
 
 schedulers = Schedulers(scheduler_CNN, scheduler_DNN1, scheduler_DNN2)
-print("Schedulers are ready!")
+#torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr, max_lr, step_size_up=2000, step_size_down=None, mode='triangular', gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True, base_momentum=0.8, max_momentum=0.9, last_epoch=-1, verbose=False)
+print("{} schedulers are ready!".format(scheduler_type))
 
 
 print("Creating the datasets... \t\t", end="")
@@ -327,6 +331,7 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_2dconvs64,128,256_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/vggish_model.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/test.cfg --cuda=0 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:

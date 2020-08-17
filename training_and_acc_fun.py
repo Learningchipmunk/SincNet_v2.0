@@ -281,17 +281,17 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
                 break
 
 
-            running_loss = 0.0
-            running_acc = 0.0
-            running_mixup_percentage = 0.0
+            running_loss           = 0.0
+            running_acc            = 0.0
+            epoch_mixup_percentage = 0.0
 
             for i, data in enumerate(train_loader, 0):
                 
                 # Getting Mixed up data if required by user:
                 if(use_mixup):
-                    inputs, labels, mixup_states     = data
-                    mixup_percentage                 = mixup_states.sum().item() / inputs.size(0)
-                    running_mixup_percentage         = 0.33*mixup_percentage + 0.66*running_mixup_percentage
+                    inputs, labels, mixup_states   = data
+                    mixup_percentage               = mixup_states.sum().item() / inputs.size(0)
+                    epoch_mixup_percentage        += mixup_percentage
                 else:
                     # gets the regular inputs
                     inputs, labels = data
@@ -342,9 +342,9 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
                     print('[%d, %5d] running loss: %.3f' %(epoch, i + 1, running_loss))
                     print('[%d, %5d] running acc: %.3f' %(epoch, i + 1, running_acc))
                     
+                    # Shows the mixup percentage on epoch:
                     if use_mixup:
-                        print('[%d, %5d] running mixup percentage: %.3f' %(epoch, i + 1, running_mixup_percentage))
-
+                        print('[%d, %5d] mixup percentage: %.2f' %(epoch, i + 1, epoch_mixup_percentage/(i+1) *100))
 
 
             ## Validation loop part:
@@ -399,6 +399,8 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
 
                 else:
                     p +=1
+
+            
         
         ## Inside While scope:
         starting_epoch += n_epoch#Here we go again...

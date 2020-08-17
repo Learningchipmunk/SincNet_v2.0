@@ -48,6 +48,51 @@ def readResults(path):
     return perfs
 
 
+## Functions that returns the right optimizer initialized:
+#Added to initialize optimizers according to user's demand:
+def InitOptimizer(Optimizer_type, parameters, lr = None, momentum = None):
+    """Functions that returns the right optimizer initialized.
+
+    Args:
+        Optimizer_type (str): Name of the optimizer the user wishes to use.
+        parameters (Module.parameters): The network's parameters we need to optimize.
+        lr (float, optional): The optimizer's learning rate. Defaults to None.
+        momentum (float, optional): The optimizer's momentum. Defaults to None.
+
+    Returns:
+        torch.optim: Returns the optimizer initialized with the parameters.
+    """
+    Optimizer_type = Optimizer_type.lower()
+
+    if "rmsprop" in Optimizer_type:
+        
+        if lr is None:
+            lr = 0.001
+        
+        if momentum is None:
+            momentum = 0
+
+        return torch.optim.RMSprop(parameters, lr=lr, alpha=0.95, eps=1e-8, momentum=momentum) 
+    
+    elif "adamax" in Optimizer_type:
+        
+        if lr == None:
+            lr=0.002
+        
+        return torch.optim.Adamax(parameters, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+    
+    elif "adam" in Optimizer_type:
+        
+        if lr == None:
+            lr = 0.001
+        
+        return torch.optim.Adam(parameters, lr=lr, betas=(0.9, 0.999), eps=1e-08, weight_decay=0, amsgrad=False)
+    
+    else:
+        print("Error: `optimizer_type` was not used properly. Please use one of these values [`rmsprop`, `adamax`, `adam`]. \nNote that the code is not case sensitive to `optimizer_type`, RmSpRoP will be understood.")
+        exit()
+
+
 ## Loads previously trained model:
 #Function was modified especially for .py folders:
 def LoadPrevModel(Main_net, CNN_net, DNN1_net, DNN2_net, model_file_path, Models_file_extension, Load, inSameFile = True, test_acc_period = 5, at_epoch = 0, evalMode = False):
