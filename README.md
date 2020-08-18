@@ -116,7 +116,7 @@ conda activate SincNet
 
 ```bash
 conda install -y jupyter pandas matplotlib seaborn nbformat
-conda install -y librosa prettytable jupyterlab pysoundfile tqdm -c conda-forge
+conda install -y librosa prettytable jupyterlab pysoundfile tqdm jupyter_contrib_nbextensions -c conda-forge
 ```
 
 * Within conda environment, pip Install those libraries too
@@ -134,10 +134,9 @@ Those packages are compatible with pytorch 1.1.0
   ```bash
   conda install pytorch==1.1.0 torchvision==0.3.0 -c pytorch
   pip install fastai
-```
-  
-- or **without** gpu support:
-  
+  ```
+  - or **without** gpu support:
+
   ```bash
   conda install pytorch==1.1.0 torchvision==0.3.0 cpuonly -c pytorch
   ```
