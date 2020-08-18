@@ -682,3 +682,10 @@ class Schedulers(object):
         self.scheduler_CNN.step(metric)
         self.scheduler_DNN1.step(metric)
         self.scheduler_DNN2.step(metric)
+
+# Dummy class Created for options object to replace OptionParser's object
+class Options(object):
+
+    def __init__(self, cfg):
+        '''Defines the cfg file'''
+        self.configPath = cfg

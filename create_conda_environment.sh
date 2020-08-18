@@ -56,7 +56,7 @@ else
 
     echo "installing base packages"
     conda install -n $envname -y jupyter pandas matplotlib seaborn nbformat
-    conda install -n $envname -y librosa prettytable jupyterlab pysoundfile tqdm -c conda-forge
+    conda install -n $envname -y librosa prettytable jupyterlab pysoundfile jupyter_contrib_nbextensions tqdm -c conda-forge
 
     eval "$(conda shell.bash hook)"
     conda activate $envname

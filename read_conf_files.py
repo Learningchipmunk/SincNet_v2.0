@@ -2,16 +2,17 @@ import configparser as ConfigParser
 #argparse doc: https://docs.python.org/2/library/argparse.html#module-argparse
 import argparse
 
-#import numpy as np
+## Local file imports:
+from utils import Options
+
 
 ## Here are the config data processing functions used in data_io:
-
 # Converts string to bool:
 def str_to_bool(s):
     """Convert Strings like "True" and "False" to booleans.
 
     Args:
-        s (String): A string that should be "True" or "False"
+        s (str): A string that should be "True" or "False"
 
     Raises:
         ValueError: If String has a wrong value
@@ -28,26 +29,35 @@ def str_to_bool(s):
          raise ValueError 
 
 
-def read_conf():
+def read_conf(config_file_path = None):
     """The purpose of this function is to read the config files saved in .cfg format.
+
+    Args:
+        config_file_path (str, optional): A string that indicates the path to the cfg file. Defaults to None.
 
     Returns:
         (object): Returns an object with all the needed information.
     """
-    # Executing with --cfg = path
-    parser = argparse.ArgumentParser(description='Running model with config file.')
-    
-    parser.add_argument('--configPath', metavar='-cfg', type=str,
-                    help='The path of the configuration file. \n\t ex: cfg/SincNet_DCASE_Preprocessing_WithEnergy_Window_800.cfg')
-    parser.add_argument('--FileName', metavar='-fn', type=str, default='None',
-                        help='Indicates the name of the saved/loaded file.')
-    parser.add_argument('--TestDataPath', metavar='-tdp', type=str, default='None',
-                        help='Indicates the path of the saved test tensor files.')
-    parser.add_argument('--cuda', metavar='-c', type=int, default=-1,
-                        help='Indicates the number of the Cuda Device(Graphic Card) you wish to use! -1 Means CPU.')
 
-    # Reads the arguments the user wrote on the command line:
-    options = parser.parse_args()
+    if config_file_path is None:
+        # Executing with --cfg = path
+        parser = argparse.ArgumentParser(description='Running model with config file.')
+        
+        parser.add_argument('--configPath', metavar='-cfg', type=str,
+                        help='The path of the configuration file. \n\t ex: cfg/SincNet_DCASE_Preprocessing_WithEnergy_Window_800.cfg')
+        parser.add_argument('--FileName', metavar='-fn', type=str, default='None',
+                            help='Indicates the name of the saved/loaded file.')
+        parser.add_argument('--TestDataPath', metavar='-tdp', type=str, default='None',
+                            help='Indicates the path of the saved test tensor files.')
+        parser.add_argument('--cuda', metavar='-c', type=int, default=-1,
+                            help='Indicates the number of the Cuda Device(Graphic Card) you wish to use! -1 Means CPU.')
+
+        # Reads the arguments the user wrote on the command line:
+        options = parser.parse_args()
+
+    else:
+        # Initializing dummy class with cfg folder path:
+        options = Options(config_file_path)
     
 
     # Reading the config file with config parser
@@ -174,7 +184,14 @@ def read_conf():
             options.patience=7
 
         options.N_epochs=Config.get('optimization', 'N_epochs')
-        options.N_batches=Config.get('optimization', 'N_batches')
+        
+        ## N_batches:
+        if 'N_batches' in Config['optimization']:
+            options.N_batches=Config.get('optimization', 'N_batches')
+        else:
+            ## We do not need to warn the user about N_batches, it is not used in SincNet_v2.0
+            options.N_batches=1600
+        
         options.N_eval_epoch=Config.get('optimization', 'N_eval_epoch')
         
         ## train_acc_period:

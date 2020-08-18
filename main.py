@@ -275,8 +275,7 @@ scheduler_DNN1 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN1, mode='min'
 scheduler_DNN2 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN2, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
 
 schedulers = Schedulers(scheduler_CNN, scheduler_DNN1, scheduler_DNN2)
-#torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr, max_lr, step_size_up=2000, step_size_down=None, mode='triangular', gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True, base_momentum=0.8, max_momentum=0.9, last_epoch=-1, verbose=False)
-print("{} schedulers are ready!".format(scheduler_type))
+print("{} schedulers are ready!".format("ReduceLROnPlateau"))
 
 
 print("Creating the datasets... \t\t", end="")
@@ -331,7 +330,8 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4400_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_2dconvs64,128,256_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/vggish_model.cfg --cuda=1 &
-# nohup python main.py --configPath=cfg/test.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/test.cfg --cuda=1 > nohup_adamax_fact0.2 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_DNN256_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:
