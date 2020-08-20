@@ -418,7 +418,7 @@ This configuration secures access to a notebook server and enables access from o
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mykey.key -out mycert.pem
   ```
 
-- Modify the following lines in `$HOME/.jupyter/jupyter_notebook_config.py`
+- Add the following lines in `$HOME/.jupyter/jupyter_notebook_config.py`
 
   ```python
   # Set options for certfile, ip, password, and toggle off
