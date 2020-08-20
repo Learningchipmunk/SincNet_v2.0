@@ -332,6 +332,8 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet2D/vggish_model.cfg --cuda=1 &
 # nohup python main.py --configPath=cfg/test.cfg --cuda=1 > nohup_adamax_fact0.2 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_DNN256_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_DNN384_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=1 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:

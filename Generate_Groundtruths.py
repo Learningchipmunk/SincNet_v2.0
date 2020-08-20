@@ -34,7 +34,7 @@ def DataCategory(Inp):
 
 def main():
     ## -- Setting up output folder: -- ##
-    output_folder = "data_lists_test/"
+    output_folder = "data_lists/"
     if not os.path.exists(output_folder):
         print("creating data list folder at `{}`".format(output_folder))
         os.mkdir(output_folder)

@@ -39,6 +39,7 @@ def read_conf(config_file_path = None):
         (object): Returns an object with all the needed information.
     """
 
+    ## Version used by .py files because they can take arguments:
     if config_file_path is None:
         # Executing with --cfg = path
         parser = argparse.ArgumentParser(description='Running model with config file.')
@@ -55,6 +56,7 @@ def read_conf(config_file_path = None):
         # Reads the arguments the user wrote on the command line:
         options = parser.parse_args()
 
+    ## Version used by notebooks because they can't take arguments:
     else:
         # Initializing dummy class with cfg folder path:
         options = Options(config_file_path)

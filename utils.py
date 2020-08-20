@@ -5,13 +5,39 @@ import matplotlib.pyplot as plt
 import torch.utils.data
 from matplotlib.lines import Line2D
 
+## Local files imports:
+from ipython_exit import exit
+
+
+## Function that raises excepetion and exists Jupyter Notebook's cell:
+def test_2D_raise_or_run(is_conv2D, message = "The current Network is not `SincNet2D` therefore the code won't be able to run! \nExited cell safely."):
+    """Function that raises excepetion and exists Jupyter Notebook's cell id the network is not `SincNet2D`.
+
+    Args:
+        is_conv2D (bool): True indicates that the Network is indeed `SincNet2D`. False indicates otherwise.
+        message (str, optional): Exception message that will be shown to the user. Defaults to "The current Network is not `SincNet2D` therefore the code won't be able to run! \nExited cell safely.".
+
+    Raises:
+        Exception: Shows to the user the error message.
+    """    
+    if not is_conv2D:
+        # Announces to the user that we are exiting the cell.
+        print("Raising exception and exiting cell.")
+
+        # Raises the Exception
+        raise Exception(message)
+        
+        # Exits the cell
+        exit()
+
+
 ## Function that reads the .res file:
 def readResults(path):
     """This function reads the .res file of a network previously trained.
 
     Args:
-        path (string): Is the path of the directory conatined the .res file.
-        filename (string): Name of the .res file to read.
+        path (str): Is the path of the directory conatined the .res file.
+        filename (str): Name of the .res file to read.
 
     Returns:
         (list): Returns the values inside the .res file with their associated epoch number.
