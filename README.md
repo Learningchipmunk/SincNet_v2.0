@@ -28,6 +28,13 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
     + [Training and Testing Models](#training-and-testing-models)
       - [Training a Model](#training-a-model)
       - [Testing a Model](#testing-a-model)
+  * [Jupyter Notebooks](#jupyter-notebooks)
+       * [Notebook Listing](#notebook-listing)
+       * [Viewing Notebooks](#viewing-notebooks)
+       * [Launching Notebooks](#launching-notebooks)
+         + [Local Launch](#local-launch)
+         + [Notebook Server](#notebook-server)
+           - [Accessing the Notebook Server](#accessing-the-notebook-server)
   * [Utilities](#utilities)
        * [Path of the Previously Trained Models](#path-of-the-previously-trained-models)
     * [Results of the Previously Trained Models](#results-of-the-previously-trained-models)
@@ -317,11 +324,137 @@ To test your previously trained model `test.cfg` on test data `insert_path_here`
 python Test_Model.py --configPath=cfg/test.cfg --TestDataPath=insert_path_here/ --cuda=0
 ```
 
+## Jupyter Notebooks
+
+**Why notebooks?**
+
+`SincNet` gives you also the possibility to run experiments on `Jupyter Notebooks` and **analyze** their outcomes. It is easier to **plot** and **interact **with the results on `Jupyter Notebook`.
+
+### Notebook Listing
+
+Each Notebook is designed to accomplish a **task**, we will only list the ones that are **deemed useful** or **interesting**:
+
+* `Compare_Changes_in_SincNet_Filters.ipynb`
+
+  → **Reads models** from `.cfg` files
+
+  → **Plots** `SincNet`'s filter banc `SincConv_fast` **before** and **after** training
+
+  → **Quantifies** the Influence of learning bandpass filters on `SincNet`
+
+  → **Analyzes** the behavior of `SincNet` without its filter banc `SincConv_fast`
+
+  → **Compares ** the results between `regular SincNet`, `SincNet` without its filter banc `SincConv_fast` and `SincNet` with a frozen filter banc `SincConv_fast`
+
+  → **Plots** the Fourier Transform of `SincNet1DConvsOnly` 1D convolutions
+
+- `DCASE_SincNet_v2.0.ipynb`
+
+  → **Reads models** from `.cfg` files
+
+  → **Analyzes** `SincNet2D` Spectrograms
+
+  → **Trains** loaded model
+
+- `Pre-processing_audio_files_to_Tensors.ipynb`
+
+  → **Loads audio** files from your **Data Base**
+
+  → **Extract features** from the data (resamples, trims and normalizes data)
+
+- `Net_Performance_Analysis.ipynb` and `Net2D_Performance_Analysis.ipynb`
+
+  → **Loads results** of the previously trained models
+
+  → **Plots** the results (may contain `confusion matrices` and `gradient monitoring`)
+
+* `Evaluate_size_of_models.ipynb`
+
+  → **Reads models** from `.cfg` files
+
+  → **Counts** the number of parameters that **requires gradient** (learning)
+
+### Viewing Notebooks
+
+If you wish to **only view** them without running them or executing their cells, you can just simply double click on the `.html` files that are in the main directory.
+
+### Launching Notebooks
+
+This readme covers two way of launching the `Jupyter Notebooks`: 
+
+* The **first** one is the easier but it requires you to have a local copy of `SincNet` on **your PC**. 
+* The **second** method will guide you through creating a Notebook Server that will accessible to other PCs. It is useful if your copy of `SincNet` is on a **server** that is accessible by `ssh`.
+
+#### Local Launch
+
+In your local copy of `SincNet`, at the same level as `.git`, you can execute the following line after **installing** and **activating** your conda environment if you wish to view the notebooks:
+
+```
+jupyter lab
+```
+
+Double click on the `.ipynb` you desire to view and enjoy the reading experience!
+
+#### Notebook Server
+
+This configuration secures access to a notebook server and enables access from other computer. **This is not the multi-user server configuration.** It follows the guidelines that can be found [here](https://jupyter-notebook.readthedocs.io/en/stable/public_server.html).
+
+- Create a Jupyter config file in your **home directory** if you do not already have one
+
+  ```bash
+  cd $HOME
+  jupyter notebook --generate-config
+  ```
+
+- Create a password
+
+  ```bash
+  jupyter notebook password
+  ```
+
+- Create a certificate and the corresponding key
+
+  ```bash
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout mykey.key -out mycert.pem
+  ```
+
+- Modify the following lines in `$HOME/.jupyter/jupyter_notebook_config.py`
+
+  ```python
+  # Set options for certfile, ip, password, and toggle off
+  # browser auto-opening
+  c.NotebookApp.certfile = u'/absolute/path/to/your/certificate/fullchain.pem'
+  c.NotebookApp.keyfile = u'/absolute/path/to/your/certificate/privkey.pem'
+  
+  # Set ip to '*' to bind on all interfaces (ips) for the public server
+  c.NotebookApp.ip = '*'
+  c.NotebookApp.open_browser = False
+  ```
+
+- Launch `jupyter lab` and it should be accessible from other computers now
+
+  ```bash
+  jupyter lab
+  ```
+
+##### Accessing the Notebook Server
+
+1. If the **server** that you are connected to **is** on your Local Network, you can simply access it by putting the `url` `https://https://$Machine'sName.$DomainName:$PortNumber/:$PortNumber/`. Where **$Machine'sName** is the name of your server on the network and the **$PortNumber** is the port number that will be shown on your server's console. **(Default port number is 8888)**
+2. If **server** that you are connected to **is not** on your Local Network but is accessible by a domain name, you can simply access it by putting the `url` `https://$Machine'sName.$DomainName:$PortNumber/`. Where **$Machine'sName** is the name of your server on the network, **$DomainName** is the domain name that gives you access to your server and the **$PortNumber** is the port number that will be shown on your server's console. **(Default port number is 8888)**
+
+> ex: When I use **Orange's server** named **yd-4q2twm2**, I use this `url` to connect to the machine : https://yd-4q2twm2.rd.francetelecom.fr:8888/
+
+Once you have access to your `Notebook Server` from your browser you are good to go! Double click on the `.ipynb` you desire to view and :cherry_blossom: enjoy the reading experience! :cherry_blossom:
+
+:heavy_exclamation_mark: Important :heavy_exclamation_mark:
+
+> **Use ‘https’.** Keep in mind that when you enable SSL support, you must access the notebook server over `https://`, not over plain `http://`!
+
 ## Utilities
 
 ##### Path of the Previously Trained Models
 
-They are on the **yd-4q2twm2** server @ `/home/nlpt4239/SincNet_DCASE_v2.0/exp/SincNet_DCASE_v2.0`
+They are on the **yd-4q2twm2** server @ `/home/nlpt4239/SincNet_DCASE_v2.0/exp/`
 
 ##### Results of the Previously Trained Models
 
