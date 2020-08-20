@@ -344,9 +344,11 @@ Each Notebook is designed to accomplish a **task**, we will only list the ones t
 
   → **Analyzes** the behavior of `SincNet` without its filter banc `SincConv_fast`
 
-  → **Compares ** the results between `regular SincNet`, `SincNet` without its filter banc `SincConv_fast` and `SincNet` with a frozen filter banc `SincConv_fast`
+  → **Compares** the results between `regular SincNet`, `SincNet` without its filter banc `SincConv_fast` and `SincNet` with a frozen filter banc `SincConv_fast`
 
   → **Plots** the Fourier Transform of `SincNet1DConvsOnly` 1D convolutions
+
+  * It is the most interesting notebook in terms of **Signal Processing**!
 
 - `DCASE_SincNet_v2.0.ipynb`
 
