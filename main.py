@@ -27,7 +27,7 @@ from Models import MLP, flip, MainNet
 from Models import SincNet as CNN 
 from Models import SincNet2D as CNN2D
 from read_conf_files import read_conf, str_to_bool
-from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel, InitOptimizer
+from utils import Optimizers, Schedulers, Dataset, plot_grad_flow, NLLL_OneHot, LoadPrevModel, InitOptimizer, InitScheduler
 from training_and_acc_fun import train, accuracy
 
 
@@ -270,12 +270,19 @@ print("{} optimizers are ready!".format(optimizer_type))
 
 ## Initializing all schedulers for optims:
 print("Initializing schedulers... \t\t", end="")
-scheduler_CNN  = optim.lr_scheduler.ReduceLROnPlateau(optimizer_CNN, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
-scheduler_DNN1 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN1, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
-scheduler_DNN2 = optim.lr_scheduler.ReduceLROnPlateau(optimizer_DNN2, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=False, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
+
+""" Quoting Cyclical Learning Rates for Training Neural Networks by Leslie N. Smith:
+experiments show that it often is good to set stepsize equal to 2 - 10 times the number of iterations in an epoch. 
+For example, setting stepsize = 8 * nbit_in_epoch with the CIFAR-10 training run (as shown in Figure 1) only gives slightly better results than setting stepsize = 2 * nbit_in_epoch.
+"""
+step_size_up   = 8 * len(tr_lst) / batch_size
+
+scheduler_CNN  = InitScheduler(scheduler_type, optimizer_CNN, lr=lr, scheduler_patience=scheduler_patience, scheduler_factor=scheduler_factor, step_size_up = step_size_up, verbose = True)
+scheduler_DNN1 = InitScheduler(scheduler_type, optimizer_DNN1, lr=lr, scheduler_patience=scheduler_patience, scheduler_factor=scheduler_factor, step_size_up = step_size_up, verbose = False)
+scheduler_DNN2 = InitScheduler(scheduler_type, optimizer_DNN2, lr=lr, scheduler_patience=scheduler_patience, scheduler_factor=scheduler_factor, step_size_up = step_size_up, verbose = False)
 
 schedulers = Schedulers(scheduler_CNN, scheduler_DNN1, scheduler_DNN2)
-print("{} schedulers are ready!".format("ReduceLROnPlateau"))
+print("{} schedulers are ready!".format(scheduler_type))
 
 
 print("Creating the datasets... \t\t", end="")
@@ -410,6 +417,7 @@ train(Main_net, optimizers, train_loader, valid_loader, cost, cost_onehot,
           plotGrad = plotGrad,
           ## If user wishes to use a scheduler:
           use_scheduler = use_scheduler,
+          scheduler_type = scheduler_type,
           scheduler = schedulers,
           ## If user wishes to save and compute confusion matrix:
           compute_matrix = compute_matrix,

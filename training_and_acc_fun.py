@@ -8,9 +8,7 @@ from utils import plot_grad_flow, mixup
 from Confusion_Matrix import confusion_matrix
 
 ## <!>---------------------------- Training and accuracy functions ----------------------------<!>
-def accuracy(net, test_loader, criterion, n_classes,
-             ## SincNet Params
-             Batch_dev, wlen, wshift, 
+def accuracy(net, test_loader, criterion,
              ## Confusion_Matrix param:
              matrix_name, compute_matrix = False,
              cuda=True):
@@ -20,9 +18,6 @@ def accuracy(net, test_loader, criterion, n_classes,
         net (nn.Module): inherits from nn.Module and is a network.
         test_loader (torch.utils.data.DataLoader): the test data loader.
         criterion (nn.Loss): is the loss function.
-        Batch_dev (int): is the number of test tensors that are stored at once in test loop.
-        wlen (int): is the size of the input of the network, for SincNet it is considered the window size of the audio.
-        wshift (int): is the step in between each window.
         matrix_name (str): is the name of the confusion matrix that will be saved.
         compute_matrix (bool, optional): Indicates if user wants to compute and save confusion matrix. Defaults to False.
         cuda (bool, optional): Indicates if net is on cuda. Defaults to True.
@@ -182,8 +177,6 @@ def accuracy(net, test_loader, criterion, n_classes,
 
 def train(net, optimizer, train_loader, valid_loader, criterion, criterion_onehot,
           ## Data scpecific variables:
-          wlen,
-          wshift,
           n_classes,
           ## File variables:
           output_folder,
@@ -192,7 +185,6 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
           ## Hyper param:
           n_epoch = 5,
           patience = 4,
-          Batch_dev = 32,#Number of batches for testing set
           train_acc_period = 100,
           test_acc_period = 5,
           ## For mixup:
@@ -207,6 +199,7 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
           plotGrad = False,
           ## If user wishes to use a scheduler:
           use_scheduler = False,
+          scheduler_type = "reducelronplateau",
           scheduler = None,
           ## If user wishes to save and compute confusion matrix:
           compute_matrix = False,
@@ -223,15 +216,12 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
         valid_loader (torch.utils.data.DataLoader): the test data loader.
         criterion (nn.Loss): is the loss function.
         criterion_onehot (nn.Loss): is the loss function compatible with one hot encoding.
-        wlen (int): is the size of the input of the network, for SincNet it is considered the window size of the audio.
-        wshift (int): is the step in between each window.
         n_classes (int): is the total number of classes of the dataset.
         output_folder (String): Name of the folder where we are going to write info.
         fname (String): The name of the model, will be used to name the saved files.
         Models_file_extension (String): The file extension of the saved models
         n_epoch (int, optional): The desired number of epoch, can be overwritten by early stopping. Defaults to 5.
         patience (int, optional): The patience of the early stopping algorithm. Defaults to 4.
-        Batch_dev (int, optional): is the number of test tensors that are stored at once in the test loop. Defaults to 32.
         test_acc_period (int, optional): The period, in epoch, of each validation test. Defaults to 5.
         beta_coef (float, optional): If using mixup, this is the parameter of the Beta(beta_coef, beta_coef) distribution. Defaults to 0.5.
         use_mixup (bool, optional): Indicates if the user desires to do mixup. Defaults to False.
@@ -240,6 +230,7 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
         starting_epoch (int, optional): The initial starting epoch. (If the model was loaded, it can be different from 0). Defaults to 0.
         plotGrad (bool, optional): Indicates if the user desires to plot Gradient flow. Defaults to False.
         use_scheduler (bool, optional): Indicates if the user desires to use a scheduler, it needs to be set to True if so. Defaults to False.
+        scheduler_type (str, optional): Indicates the type of scheduler the user wishes to use. Defaults to 'reducelronplateau'.
         scheduler (object, optional) : Is the scheduler for thje network. Defaults to None.
         compute_matrix (bool, optional): Indicates if user wants to compute and save confusion matrix. Defaults to False.
         is_SincNet (bool, optional): Indicates if the network that is trained is SincNet, it should be set to True if so. Defaults to False.
@@ -267,8 +258,20 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
         print(" and using {1}mixup with a Beta({0}, {0}) distribution and a mixup proportion = {2}.".format(beta_coef, string, mixup_batch_prop))
     else:
         print(".")
+
+    ## Determines wich scheduler we are using:
     if use_scheduler:
-        print("Training is optimized with a scheduler.")
+        Scheduler_type = scheduler_type.lower()
+        if "cycliclr" in Scheduler_type:
+            is_cycliclr          = True
+            is_reducelronplateau = False
+        
+        elif "reducelronplateau" in Scheduler_type:
+            is_cycliclr          = False
+            is_reducelronplateau = True
+
+        print("Training is optimized with a {} scheduler.".format(scheduler_type))
+
     print("Total number of classes is equal to : {}".format(n_classes))
     
     ## Continues training beyond n_epoch if algorithm did not converge:
@@ -345,17 +348,20 @@ def train(net, optimizer, train_loader, valid_loader, criterion, criterion_oneho
                     # Shows the mixup percentage on epoch:
                     if use_mixup:
                         print('[%d, %5d] mixup percentage: %.2f' %(epoch, i + 1, epoch_mixup_percentage/(i+1) *100))
+                
+                ## If user wishes to use a scheduler:
+                if(use_scheduler and is_cycliclr):
+                    scheduler.step()
 
 
             ## Validation loop part:
             if epoch % test_acc_period == 0:
-                best_class_error, cur_loss, window_error = accuracy(net, valid_loader, criterion, n_classes,
-                                                                    Batch_dev, wlen, wshift,
+                best_class_error, cur_loss, window_error = accuracy(net, valid_loader, criterion,
                                                                     matrix_name = fname, compute_matrix = compute_matrix,
                                                                     cuda=cuda)
 
                 ## If user wishes to use a scheduler:
-                if(use_scheduler):
+                if(use_scheduler and is_reducelronplateau):
                     scheduler.step(cur_loss)
 
 

@@ -74,7 +74,7 @@ def readResults(path):
     return perfs
 
 
-## Functions that returns the right optimizer initialized:
+## Function that returns the right optimizer initialized:
 #Added to initialize optimizers according to user's demand:
 def InitOptimizer(Optimizer_type, parameters, lr = None, momentum = None):
     """Functions that returns the right optimizer initialized.
@@ -118,6 +118,84 @@ def InitOptimizer(Optimizer_type, parameters, lr = None, momentum = None):
         print("Error: `optimizer_type` was not used properly. Please use one of these values [`rmsprop`, `adamax`, `adam`]. \nNote that the code is not case sensitive to `optimizer_type`, RmSpRoP will be understood.")
         exit()
 
+
+def determine_mode(Scheduler_type, is_lower_case=False):
+    """Function that determines if the user wishes to use a CyclicLR scheduler.
+
+    Args:
+        Scheduler_type (str): A string that indicates the type of scheduler the user wants.
+        is_lower_case (bool): True indicates that Scheduler_type is already written in lower case.
+
+    Returns:
+        (str): Returns the value in string of the mode the user wished to use.
+    """
+    if not is_lower_case:
+        Scheduler_type = Scheduler_type.lower()
+
+
+    """
+    “triangular”: A basic triangular cycle without amplitude scaling.
+
+    “triangular2”: A basic triangular cycle that scales initial amplitude by half each cycle.
+
+    “exp_range”: A cycle that scales initial amplitude by gamma^cycle_iterations at each cycle iteration.
+    """
+    if "triangular2" in Scheduler_type:       
+        return "triangular2"
+
+    elif "triangular" in Scheduler_type:
+        return "triangular"    
+    
+    elif "exp_range" in Scheduler_type:
+        return "exp_range"
+    
+    else:
+        print("Warning: You did not dpecify CyclicLR mode. By default, CyclicLR is initialized with `triangular2`.")
+        return "triangular2"
+
+
+
+## Function that returns the right scheduler initialized:
+#Added to initialize schedulers according to user's demand:
+def InitScheduler(Scheduler_type, optimizer, lr = 0.001, scheduler_patience = 2, scheduler_factor = 0.5, step_size_up = 2000, verbose = False):
+    """Function that returns the right scheduler initialized.
+
+    Args:
+        Scheduler_type (str): Name of the scheduler the user wishes to use.
+        optimizer (torch.optim): The network's parameters we need to optimize.
+        lr (float, optional): The optimizer's learning rate. Defaults to 0.001.
+        scheduler_patience (int, optional): Number of epochs with no improvement after which learning rate will be reduced. Defaults to 2.
+        scheduler_factor (float, optional): Is the amount the Learning rate will be reduced if scheduler patience is exceeded. Defaults to 0.5.
+        step_size_up (int, optional): Number of training iterations in the increasing half of a cycle. Defaults to 2000.
+        verbose (bool, optional): If True, prints a message to stdout for each update. Defaults to False.
+
+    Returns:
+        torch.optim: Returns the scheduler initialized with the parameters.
+    """    
+    Scheduler_type = Scheduler_type.lower()
+    is_lower_case  = True
+
+    if "cycliclr" in Scheduler_type:
+        
+        """ Quoting Cyclical Learning Rates for Training Neural Networks by Leslie N. Smith:
+        Alternatively, one can use the rule of thumb that the optimum learning rate is usually within a
+        factor of two of the largest one that converges [2] and set base lr to 1/3 or 1/4 of max lr.
+        """
+        max_lr  = lr
+        base_lr = max_lr/4
+
+        ## Determining which mode user wishes to use:
+        mode = determine_mode(Scheduler_type, is_lower_case)
+        
+        return torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr, max_lr, step_size_up=step_size_up, step_size_down=None, mode=mode, gamma=1.0, scale_fn=None, scale_mode='cycle', cycle_momentum=True, base_momentum=0.8, max_momentum=0.9, last_epoch=-1) 
+    
+    elif "reducelronplateau" in Scheduler_type:
+
+        return torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=scheduler_factor, patience=scheduler_patience, verbose=verbose, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08)
+    
+    else:
+        print("Error: `scheduler_type` was not used properly. Please use one of these values  [`ReduceLROnPlateau`, `CyclicLR_triangular`, `CyclicLR_triangular2`, `CyclicLR_exp_range`]. \nNote that the code is not case sensitive to `scheduler_type`, reduceLRONPlaTeau will be understood.")
+        exit()
 
 ## Loads previously trained model:
 #Function was modified especially for .py folders:
@@ -704,11 +782,16 @@ class Schedulers(object):
         self.scheduler_DNN1 = scheduler_DNN1
         self.scheduler_DNN2 = scheduler_DNN2
         
-    def step(self, metric):
-        self.scheduler_CNN.step(metric)
-        self.scheduler_DNN1.step(metric)
-        self.scheduler_DNN2.step(metric)
-
+    def step(self, metric = None):
+        if metric is not None:
+            self.scheduler_CNN.step(metric)
+            self.scheduler_DNN1.step(metric)
+            self.scheduler_DNN2.step(metric)
+        else:
+            self.scheduler_CNN.step()
+            self.scheduler_DNN1.step()
+            self.scheduler_DNN2.step()
+    
 # Dummy class Created for options object to replace OptionParser's object
 class Options(object):
 
