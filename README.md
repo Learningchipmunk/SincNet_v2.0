@@ -14,6 +14,7 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
     + [Bash Script Setup](#bash-script-setup)
     + [Dependency File Setup](#dependency-file-setup)
     + [Step by Step Guide](#step-by-step-guide)
+  + [Script Structure](# Script Structure)
   * [How to Setup SincNet for Experimentation:](#how-to-setup-sincnet-for-experimentation-)
     + [Fetch DCASE2018 Task2 Data](#fetch-dcase2018-task2-data)
       - [On Orange's Server](#on-orange-s-server)
@@ -152,6 +153,10 @@ Those packages are compatible with pytorch 1.1.0
   ```
 
 > :exclamation: Cpu only version **does not** support `fastai` :exclamation:
+
+## Script Structure
+
+![Script_Structure](Images/Readme.md_Images/Script_Structure.png)
 
 ## How to Setup SincNet for Experimentation:
 
