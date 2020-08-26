@@ -1,0 +1,50 @@
++-------------------------+------------+
+|         Modules         | Parameters |
++-------------------------+------------+
+|  CNN_net.conv.0.low_hz_ |     80     |
+| CNN_net.conv.0.band_hz_ |     80     |
+|  CNN_net.conv.1.weight  |   24000    |
+|   CNN_net.conv.1.bias   |     60     |
+|  CNN_net.conv.2.weight  |   18000    |
+|   CNN_net.conv.2.bias   |     60     |
+|  CNN_net.conv.3.weight  |   18000    |
+|   CNN_net.conv.3.bias   |     60     |
+|  CNN_net.conv.4.weight  |   18000    |
+|   CNN_net.conv.4.bias   |     60     |
+|  CNN_net.conv.5.weight  |   18000    |
+|   CNN_net.conv.5.bias   |     60     |
+|    CNN_net.ln.0.gamma   |  2553280   |
+|    CNN_net.ln.0.beta    |  2553280   |
+|    CNN_net.ln.1.gamma   |   638220   |
+|    CNN_net.ln.1.beta    |   638220   |
+|    CNN_net.ln.2.gamma   |   212640   |
+|    CNN_net.ln.2.beta    |   212640   |
+|    CNN_net.ln.3.gamma   |   70800    |
+|    CNN_net.ln.3.beta    |   70800    |
+|    CNN_net.ln.4.gamma   |   23520    |
+|    CNN_net.ln.4.beta    |   23520    |
+|    CNN_net.ln.5.gamma   |    7740    |
+|    CNN_net.ln.5.beta    |    7740    |
+|    CNN_net.ln0.gamma    |   96000    |
+|     CNN_net.ln0.beta    |   96000    |
+|   DNN1_net.wx.0.weight  |  7925760   |
+|    DNN1_net.wx.0.bias   |    1024    |
+|   DNN1_net.wx.1.weight  |  1048576   |
+|    DNN1_net.wx.1.bias   |    1024    |
+|   DNN1_net.wx.2.weight  |   524288   |
+|    DNN1_net.wx.2.bias   |    512     |
+|   DNN1_net.bn.0.weight  |    1024    |
+|    DNN1_net.bn.0.bias   |    1024    |
+|   DNN1_net.bn.1.weight  |    1024    |
+|    DNN1_net.bn.1.bias   |    1024    |
+|   DNN1_net.bn.2.weight  |    512     |
+|    DNN1_net.bn.2.bias   |    512     |
+|  DNN1_net.act.0.weight  |     1      |
+|  DNN1_net.act.1.weight  |     1      |
+|  DNN1_net.act.2.weight  |     1      |
+|    DNN1_net.ln0.gamma   |    7740    |
+|    DNN1_net.ln0.beta    |    7740    |
+|   DNN2_net.wx.0.weight  |   20992    |
+|    DNN2_net.wx.0.bias   |     41     |
++-------------------------+------------+
+Total Trainable Params: 16843680

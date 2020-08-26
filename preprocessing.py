@@ -5,7 +5,7 @@ Audio Preprocessing
 
 Description: 
  This code prepares audio files for sound recognition experiments. 
- It normalizes  audio files then removes start and end parts that are inferior to a threshold of the energy (by default it is 25%). It also pads audio files that are below the required length.
+ It normalizes audio files then removes start and end parts that are inferior to a threshold of the energy (by default it is 25%). It also pads audio files that are below the required length.
  
 How to run it:
  python preprocessing.py $TRAIN_FOLDER $TEST_FOLDER $OUTPUT_TRAIN_FOLDER $OUTPUT_TEST_FOLDER $wlen $sr

@@ -137,7 +137,7 @@ wshift=int(fs*cw_shift/1000.00)
 cost = nn.NLLLoss()
 
 ## Setting cuda Device
-print("Selecting Cuda device... \t\t", end="")
+print("Selecting device... \t\t", end="")
 Desired_cuda_device_number = int(options.cuda)
 
 if(Desired_cuda_device_number == -1):

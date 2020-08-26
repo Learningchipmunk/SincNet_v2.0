@@ -1,0 +1,39 @@
++-------------------------+------------+
+|         Modules         | Parameters |
++-------------------------+------------+
+|  CNN_net.conv.0.low_hz_ |     64     |
+| CNN_net.conv.0.band_hz_ |     64     |
+|  CNN_net.conv.1.weight  |    270     |
+|   CNN_net.conv.1.bias   |     30     |
+|  CNN_net.conv.2.weight  |   16200    |
+|   CNN_net.conv.2.bias   |     60     |
+|  CNN_net.conv.3.weight  |   48600    |
+|   CNN_net.conv.3.bias   |     90     |
+|   CNN_net.bn.0.weight   |     1      |
+|    CNN_net.bn.0.bias    |     1      |
+|   CNN_net.bn.1.weight   |     30     |
+|    CNN_net.bn.1.bias    |     30     |
+|   CNN_net.bn.2.weight   |     60     |
+|    CNN_net.bn.2.bias    |     60     |
+|   CNN_net.bn.3.weight   |     90     |
+|    CNN_net.bn.3.bias    |     90     |
+|    CNN_net.ln0.weight   |   128000   |
+|     CNN_net.ln0.bias    |   128000   |
+|   DNN1_net.wx.0.weight  |  2695680   |
+|    DNN1_net.wx.0.bias   |    384     |
+|   DNN1_net.wx.1.weight  |   98304    |
+|    DNN1_net.wx.1.bias   |    256     |
+|   DNN1_net.wx.2.weight  |   65536    |
+|    DNN1_net.wx.2.bias   |    256     |
+|   DNN1_net.bn.0.weight  |    384     |
+|    DNN1_net.bn.0.bias   |    384     |
+|   DNN1_net.bn.1.weight  |    256     |
+|    DNN1_net.bn.1.bias   |    256     |
+|   DNN1_net.bn.2.weight  |    256     |
+|    DNN1_net.bn.2.bias   |    256     |
+|    DNN1_net.ln0.gamma   |    7020    |
+|    DNN1_net.ln0.beta    |    7020    |
+|   DNN2_net.wx.0.weight  |   10496    |
+|    DNN2_net.wx.0.bias   |     41     |
++-------------------------+------------+
+Total Trainable Params: 3208525
