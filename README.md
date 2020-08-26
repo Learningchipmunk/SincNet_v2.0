@@ -38,6 +38,9 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
   * [Utilities](#utilities)
        * [Path of the Previously Trained Models](#path-of-the-previously-trained-models)
     * [Results of the Previously Trained Models](#results-of-the-previously-trained-models)
+      * [Showcased Results](# Showcased Results)
+    * [Summaries of Previously Trained Models](# Summaries of Previously Trained Models)
+      * [How to Create your own Summary](# How to Create your own Summary)
     * [Tutors](#tutors)
     * [Author](#author)
     * [Co-Intern](#co-intern)
@@ -461,6 +464,26 @@ They are on the **yd-4q2twm2** server @ `/home/nlpt4239/SincNet_DCASE_v2.0/exp/`
 ##### Results of the Previously Trained Models
 
 You can find the most relevant results of previously trained models [here](https://gitlab.tech.orange/golden-ear-for-things/nn-acoustic-feature-extraction/test).
+
+###### Showcased Results
+
+![Showcased Results](Images\Readme.md_Images\Results_ShowcasedInRDME.png)
+
+##### Summaries of Previously Trained Models
+
+You can find the most relevant **summaries** of previously trained models in the folder `Model_Summaries` in the main directory of this repository.
+
+###### How to Create your own Summary
+
+To create your own summary, you must run the python script `Generate_Summary.py`.
+
+>  `Generate_Summary.py` has the same options as `main.py`. ([See above](#Training a Model).) However, the only useful options are **configPath** and **cuda**.
+
+To create your the summary of the model you described in the `test.cfg` file with the device `cuda:0`, execute the following command:
+
+```bash
+python Generate_Summary.py --configPath=cfg/test.cfg --cuda=0
+```
 
 
 ##### Tutors
