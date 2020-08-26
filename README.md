@@ -472,7 +472,7 @@ You can find the most relevant results of previously trained models [here](https
 
 ###### Showcased Results
 
-![Showcased Results](Images\Readme.md_Images\Results_ShowcasedInRDME.png)
+![Showcased Results](Images/Readme.md_Images/Results_ShowcasedInRDME.png)
 
 ##### Summaries of Previously Trained Models
 
