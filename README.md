@@ -36,12 +36,14 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
          + [Local Launch](#local-launch)
          + [Notebook Server](#notebook-server)
            - [Accessing the Notebook Server](#accessing-the-notebook-server)
+  - [References](#references)
   * [Utilities](#utilities)
        * [Path of the Previously Trained Models](#path-of-the-previously-trained-models)
     * [Results of the Previously Trained Models](#results-of-the-previously-trained-models)
       * [Showcased Results](# Showcased Results)
     * [Summaries of Previously Trained Models](# Summaries of Previously Trained Models)
       * [How to Create your own Summary](# How to Create your own Summary)
+    * [Power Point Presentation](#power-point-presentation)
     * [Tutors](#tutors)
     * [Author](#author)
     * [Co-Intern](#co-intern)
@@ -320,9 +322,9 @@ python main.py --configPath=cfg/test.cfg --cuda=0
 
 To test a model, you must run the python script `Test_Model.py`.
 
-* `Test_Model.py` has the same options as `main.py`. ([See above](#Training a Model).)
+* `Test_Model.py` has the same options as `main.py`. ([See above](#training-a-model).)
 
-* In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#Testing Set) section!
+* In `Test_Model.py`, in the section **Getting the data relevant to the test dataset**, you should modify the paths of `testTensorFiles`,  	`data_folder_test` and `lab_dict` according to the preprocessing you did in the [Testing Set](#testing-set) section!
 
   * > :warning: **Remark**: If you are using DCASE data and you **did not** re-create your own datalists, you can use ours by keeping the values of `testTensorFiles` and `lab_dict` unchanged. :warning:
 
@@ -460,6 +462,16 @@ Once you have access to your `Notebook Server` from your browser you are good to
 
 > **Use ‘https’.** Keep in mind that when you enable SSL support, you must access the notebook server over `https://`, not over plain `http://`!
 
+## References
+
+1. Mirco Ravanelli, Yoshua Bengio "Speaker Recognition from Raw Waveform with **SincNet**"
+2. Hongyi Zhang "mixup: Beyond Empirical Risk Minimization"
+3. Ioffe, Szegedy "Batch Normalization Accelerating Deep Network"
+4. Leslie N. Smith "Cyclical Learning Rates for Training Neural Networks"
+5. Leslie N. Smith "A disciplined approach to neural network Hyper-Parameters"
+
+The cited articles mentioned above are available [here](https://gitlab.tech.orange/golden-ear-for-things/nn-acoustic-feature-extraction/test/-/tree/master/Scientific_Articles).
+
 ## Utilities
 
 ##### Path of the Previously Trained Models
@@ -482,7 +494,7 @@ You can find the most relevant **summaries** of previously trained models in the
 
 To create your own summary, you must run the python script `Generate_Summary.py`.
 
->  `Generate_Summary.py` has the same options as `main.py`. ([See above](#Training a Model).) However, the only useful options are **configPath** and **cuda**.
+>  `Generate_Summary.py` has the same options as `main.py`. ([See above](#training-a-model).) However, the only useful options are **configPath** and **cuda**.
 
 To create your the summary of the model you described in the `test.cfg` file with the device `cuda:0`, execute the following command:
 
@@ -490,6 +502,9 @@ To create your the summary of the model you described in the `test.cfg` file wit
 python Generate_Summary.py --configPath=cfg/test.cfg --cuda=0
 ```
 
+##### Power Point Presentation
+
+The Power Point presentation on the work of both interns is available [here](https://gitlab.tech.orange/golden-ear-for-things/nn-acoustic-feature-extraction/test/-/tree/master/PPT_Stage).
 
 ##### Tutors
 
