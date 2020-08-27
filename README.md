@@ -340,6 +340,8 @@ python Test_Model.py --configPath=cfg/test.cfg --TestDataPath=insert_path_here/ 
 
 `SincNet` gives you also the possibility to run experiments on `Jupyter Notebooks` and **analyze** their outcomes. It is easier to **plot** and **interact **with the results on `Jupyter Notebook`.
 
+> **HTML versions** of **Notebooks** are available, they are located in the `HTML_Notebooks` file in the main directory of this repository.
+
 ### Notebook Listing
 
 Each Notebook is designed to accomplish a **task**, we will only list the ones that are **deemed useful** or **interesting**:
