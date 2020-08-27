@@ -342,8 +342,7 @@ Main_net, CNN_net, DNN1_net, DNN2_net, _, _ = LoadPrevModel(Main_net, CNN_net, D
                                                 evalMode = True)
 
 
-best_class_error, cur_loss, window_error = accuracy(Main_net, test_loader, cost, n_classes,
-                                                    Batch_dev, wlen, wshift,
+best_class_error, cur_loss, window_error = accuracy(Main_net, test_loader, cost,
                                                     matrix_name = model_file_name+"_test_dataset", compute_matrix = compute_matrix,
                                                     cuda=True)
 

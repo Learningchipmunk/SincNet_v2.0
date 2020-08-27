@@ -341,6 +341,8 @@ print("Done!")
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_DNN256_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_DNN384_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
 # nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow5000_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=1 &
+# nohup python main.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergyWindow4800_32kHz_Scheduler_More2dconvs_Drop30.cfg --cuda=0 &
+# nohup python main.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window4800_PReLu_Drop30.cfg --cuda=1 &
 ## Parameters that needs to change each execution:
 model_file_name   = output_folder.split("/")[-2] if output_folder.split("/")[-1]=="" else output_folder.split("/")[-1]
 ## Loads the file from options.FileName if the parameter is used:
@@ -392,8 +394,6 @@ Main_net, CNN_net, DNN1_net, DNN2_net, previous_epoch, min_loss = LoadPrevModel(
 
 train(Main_net, optimizers, train_loader, valid_loader, cost, cost_onehot,
           ## Data related variables:
-          wlen,
-          wshift,
           n_classes,
           ## File variables:
           output_folder,
@@ -402,7 +402,6 @@ train(Main_net, optimizers, train_loader, valid_loader, cost, cost_onehot,
           ## Hyper param:
           n_epoch = N_epochs,
           patience = patience,
-          Batch_dev = Batch_dev,#Number of batches for testing set
           train_acc_period = train_acc_period,
           test_acc_period = N_eval_epoch,
           ## For Mixup
