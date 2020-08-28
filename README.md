@@ -9,6 +9,7 @@ It also has a modified version called `SincNet2D` that converts the ouput of of 
 #### Table of Content
 
 - [SincNet v2.0 for DCASE:](#sincnet-v20-for-dcase-)
+  
   * [Prerequisites](#prerequisites)
   * [Conda Environment Setup](#conda-environment-setup)
     + [Bash Script Setup](#bash-script-setup)
@@ -187,7 +188,7 @@ In order to run **SincNet**, you must have `data_lists` containing the names of 
 >  If you are **not** using **DCASE audios**: you must generate your own data lists! Scripts provided might not work, they are specifically made for DCASE `CSVs` and may not be suitable for your data. 
 
 1. `Generate_datalists.py` has 2 system arguments that **do not have default values**:
-   1. The relative path to the txt file containing the audio names ***($TXT_PATH)***.  
+   1. The relative path to the txt file containing the names of the audio files ***($TXT_PATH)***.  
    2. The category of the audios, must **contain strictly** one of these words: [`train`, `test`,  `valid`]. It is **not** case sensitive, `TrAiNing` will be recognized. ***($DATA_CATEGORY)***.  
 
 ``` bash
