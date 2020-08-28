@@ -28,10 +28,11 @@ python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay4_Rand0PreEnergy
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_Notebook --cuda=0
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay5_Rand0PreEnergy4000ms_Scheduler0.2_Window3000ms_PReLu_Drop30_Energy600_Notebook --cuda=1
-Old versions:
+1D versions:
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_FreezeSincNet --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_PReLu_Drop30.cfg --FileName=CNNlay4_Rand0PreEnergy1000ms_Scheduler_Window800ms_PReLu_Drop30_normalSincNet --cuda=1
 python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay4_Rand0PreEnergyWindow800_Scheduler_1DConvOnly_PReLu_Drop30.cfg --cuda=1
+python Test_Model.py --configPath=cfg/SincNet_DCASE_CNNLay6_DNN1024_Rand0Pre_WithEnergy_Window4800_PReLu_Drop30.cfg --cuda=1
 
 2D version:
 python Test_Model.py --configPath=cfg/SincNet2D/SincNet2D_CNNLay5_Rand0PreEnergyWindow3000_Scheduler_PReLu_Drop30.cfg --cuda=0
@@ -272,6 +273,9 @@ if options.TestDataPath == 'None':
 
         elif "4400" in options.data_folder:
             data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window4400ms_32kHz_Random0Padding/"
+
+        elif "4800" in options.data_folder:
+            data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window4800ms_32kHz_Random0Padding/"
 
         elif "5000" in options.data_folder:
             data_folder_test += "Preprocessed_withEnergy_AudioTensors_Window5000ms_32kHz_Random0Padding/"
