@@ -216,7 +216,7 @@ The preprocessing is our way of extracting features from the audio files. Our sc
 In our many tests, we used the preprocessing script with those values:
 
 * **targetSamplingRate** = [16kHz, 32kHz]
-* **window_length** = [1000ms, 4000ms, 4400ms, 5000ms]
+* **window_length** = [1000ms, 4000ms, 4400ms, 4800ms, 5000ms]
 * **delay, L, stride, random_padding_zeros, repeating signal,** etc... Were set after multiple test runs and were chosen based on their results. You can change them to your convenience, but keep in mind that you might not have the same results as we did...
 * We tried several methods for padding:
 
@@ -244,8 +244,8 @@ You can either use the **python script** `preprocessing.py` to preprocess the au
 
 `preprocessing.py` has 6 system arguments that **do not have default values**:
 
-1. The absolute path to the train audio files ***($TRAIN_FOLDER)***.  
-2. The absolute path to the test audio files ***($TEST_FOLDER)***.  
+1. The absolute path to load the train audio files ***($TRAIN_FOLDER)***.  
+2. The absolute path to load the test audio files ***($TEST_FOLDER)***.  
 3. The relative path to save the preprocessed train audio files ***($OUTPUT_TRAIN_FOLDER)***.  
 4. The relative path to save the preprocessed test audio files ***($OUTPUT_TEST_FOLDER)***.   
 5. The window length **($wlen)** in ms.
